@@ -317,10 +317,15 @@ select {
     padding: 5px 10px;
     border: 1px solid currentColor;
     border-radius: 999px;
-    color: var(--green);
+    color: var(--yellow);
     font-size: 0.7rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+}
+
+#qualification-status.qualified,
+.qualification.qualified {
+    color: var(--green);
 }
 
 #qualification-status.eliminated,
@@ -329,7 +334,7 @@ select {
 }
 
 .qualification {
-    color: var(--green);
+    color: var(--yellow);
     letter-spacing: 0.06em;
 }
 

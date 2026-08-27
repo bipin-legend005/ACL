@@ -172,14 +172,59 @@ function calculateStandings() {
 
     const leagueMatches = matches.filter(match => !match.isPlayoff);
     const leagueComplete = leagueMatches.length > 0 && leagueMatches.every(match => match.status === "completed");
+    const qualificationStatuses = leagueComplete ? null : calculateQualificationStatuses(standings, leagueMatches);
 
     return standings
         .sort((a, b) => b.points - a.points || b.nrr - a.nrr || b.runsFor - a.runsFor || a.team.localeCompare(b.team))
         .map((team, index) => ({
             ...team,
             position: index + 1,
-            qualification: leagueComplete ? (index < 4 ? `Q${index + 1}` : "ELIMINATED") : "PENDING"
+            qualification: leagueComplete
+                ? (index < 4 ? `Q${index + 1}` : "ELIMINATED")
+                : qualificationStatuses[team.team]
         }));
+}
+
+function calculateQualificationStatuses(standings, leagueMatches) {
+    const remainingMatches = leagueMatches.filter(match => match.status !== "completed");
+    const bestRank = Object.fromEntries(teams.map(team => [team, teams.length]));
+    const worstRank = Object.fromEntries(teams.map(team => [team, 1]));
+    const points = Object.fromEntries(standings.map(team => [team.team, team.points]));
+
+    function evaluateScenario(matchIndex) {
+        if (matchIndex === remainingMatches.length) {
+            teams.forEach(team => {
+                const currentPoints = points[team];
+                const rankWithTieBreak = 1 + teams.filter(other => other !== team && points[other] > currentPoints).length;
+                const worstCaseRank = 1 + teams.filter(other => other !== team && points[other] >= currentPoints).length;
+                bestRank[team] = Math.min(bestRank[team], rankWithTieBreak);
+                worstRank[team] = Math.max(worstRank[team], worstCaseRank);
+            });
+            return;
+        }
+
+        const match = remainingMatches[matchIndex];
+        points[match.team1] += 2;
+        evaluateScenario(matchIndex + 1);
+        points[match.team1] -= 2;
+
+        points[match.team2] += 2;
+        evaluateScenario(matchIndex + 1);
+        points[match.team2] -= 2;
+
+        points[match.team1] += 1;
+        points[match.team2] += 1;
+        evaluateScenario(matchIndex + 1);
+        points[match.team1] -= 1;
+        points[match.team2] -= 1;
+    }
+
+    evaluateScenario(0);
+
+    return Object.fromEntries(teams.map(team => [
+        team,
+        worstRank[team] <= 4 ? "QUALIFIED" : bestRank[team] > 4 ? "ELIMINATED" : "PENDING"
+    ]));
 }
 
 function parseOvers(overs) {
@@ -207,7 +252,7 @@ function renderPointsTable() {
             <td>${team.losses}</td>
             <td>${team.points}</td>
             <td>${team.nrr.toFixed(2)}</td>
-            <td><strong class="qualification ${team.qualification === "ELIMINATED" ? "eliminated" : ""}">${team.qualification}</strong></td>
+            <td><strong class="qualification ${team.qualification.toLowerCase()}">${team.qualification}</strong></td>
         </tr>
     `).join("");
 }
@@ -274,7 +319,7 @@ function updateDashboard(team) {
     const standings = calculateStandings();
     const teamStats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
     document.getElementById("qualification-status").textContent = teamStats.qualification || "ELIMINATED";
-    document.getElementById("qualification-status").classList.toggle("eliminated", teamStats.qualification === "ELIMINATED");
+    document.getElementById("qualification-status").className = teamStats.qualification.toLowerCase();
     const statBoxes = document.querySelectorAll(".stats div");
 
     statBoxes[0].querySelector("strong").textContent = teamStats.played;
