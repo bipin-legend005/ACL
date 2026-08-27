@@ -15,7 +15,6 @@ const teamColors = {
 };
 
 const STORAGE_KEY = "cricketTournamentState";
-const PREDICTIONS_KEY = "cplPredictions";
 const NEWS_KEY = "cplOrganizerNews";
 
 const defaultMatches = [
@@ -64,7 +63,6 @@ const scheduleList = document.getElementById("schedule-list");
 const playoffList = document.getElementById("playoff-list");
 const pointsTableBody = document.getElementById("points-table-body");
 const matchCard = document.getElementById("match-card");
-const predictionList = document.getElementById("prediction-list");
 const newsList = document.getElementById("news-list");
 const newsForm = document.getElementById("news-form");
 const newsIdInput = document.getElementById("news-id");
@@ -80,7 +78,6 @@ const playerOnlySections = [
 ];
 
 let matches = loadMatches();
-let predictions = loadJSON(PREDICTIONS_KEY, {});
 let organizerNews = loadJSON(NEWS_KEY, []);
 
 function loadJSON(key, fallback) {
@@ -197,54 +194,6 @@ function renderFormGuide(team) {
     } else {
         formSummary.textContent = `${stats.wins ? "📊 Building momentum" : "🟡 Still searching for a win"} — ${stats.wins} wins from ${stats.played} matches.`;
     }
-}
-
-function getPrediction(match) {
-    const saved = predictions[match.id] || {};
-    return {
-        team1: Number(saved.team1) || 0,
-        team2: Number(saved.team2) || 0,
-        choice: saved.choice || null
-    };
-}
-
-function predictionPercentages(match) {
-    const prediction = getPrediction(match);
-    const total = prediction.team1 + prediction.team2;
-    return {
-        prediction,
-        team1: total ? Math.round(prediction.team1 / total * 100) : 50,
-        team2: total ? Math.round(prediction.team2 / total * 100) : 50
-    };
-}
-
-function renderPredictions() {
-    const predictionMatches = matches.filter(match => !match.isPlayoff);
-
-    predictionList.innerHTML = predictionMatches.map(match => {
-        const percentages = predictionPercentages(match);
-        const { prediction } = percentages;
-        const completed = match.status === "completed";
-        const communityTeam = prediction.team1 || prediction.team2
-            ? (prediction.team1 >= prediction.team2 ? match.team1 : match.team2)
-            : "No votes yet";
-        const communityPercent = prediction.team1 || prediction.team2
-            ? Math.max(percentages.team1, percentages.team2)
-            : 0;
-        const actualResult = match.winner || "Tie / No Result";
-        const resultMessage = completed
-            ? `<div class="prediction-result"><strong>PREDICTION RESULT</strong><span>Community predicted: ${communityTeam}${communityPercent ? ` — ${communityPercent}%` : ""}</span><span>Actual result: ${actualResult} ${match.winner ? (communityTeam === match.winner ? "✅" : "❌") : ""}</span><small>${match.winner && communityTeam === match.winner ? "Community got it right!" : match.winner ? "Community prediction was incorrect." : "Prediction locked after a tie / no result."}</small></div>`
-            : `<div class="vote-actions"><button type="button" data-predict="${match.id}" data-team="1" class="${prediction.choice === match.team1 ? "voted" : ""}">Vote ${match.team1}</button><button type="button" data-predict="${match.id}" data-team="2" class="${prediction.choice === match.team2 ? "voted" : ""}">Vote ${match.team2}</button></div>`;
-
-        return `
-            <article class="prediction-card">
-                <div class="prediction-header"><span>Match ${match.id}</span><strong>${completed ? "LOCKED" : "WHO WILL WIN?"}</strong></div>
-                <div class="prediction-teams"><span>${match.team1} <b>${percentages.team1}%</b></span><span><b>${percentages.team2}%</b> ${match.team2}</span></div>
-                <div class="prediction-bar"><i style="width: ${percentages.team1}%"></i></div>
-                ${resultMessage}
-            </article>
-        `;
-    }).join("");
 }
 
 function formatNewsDate(date = new Date()) {
@@ -601,7 +550,6 @@ function renderAll() {
     populateMatchSelect();
     fillScoresForSelectedMatch();
     updateDashboard(teamSelector.value);
-    renderPredictions();
     renderNews();
     renderAdminNews();
 }
@@ -696,26 +644,6 @@ resultForm.addEventListener("submit", function (event) {
 });
 
 resultMatchSelect.addEventListener("change", fillScoresForSelectedMatch);
-
-predictionList.addEventListener("click", function (event) {
-    const button = event.target.closest("[data-predict]");
-    if (!button) return;
-
-    const matchId = Number(button.dataset.predict);
-    const teamNumber = Number(button.dataset.team);
-    const match = matches.find(item => item.id === matchId);
-    if (!match || match.status === "completed") return;
-
-    const prediction = getPrediction(match);
-    if (prediction.choice === match.team1) prediction.team1 = Math.max(0, prediction.team1 - 1);
-    if (prediction.choice === match.team2) prediction.team2 = Math.max(0, prediction.team2 - 1);
-    if (teamNumber === 1) prediction.team1 += 1;
-    if (teamNumber === 2) prediction.team2 += 1;
-    prediction.choice = teamNumber === 1 ? match.team1 : match.team2;
-    predictions[matchId] = prediction;
-    saveJSON(PREDICTIONS_KEY, predictions);
-    renderPredictions();
-});
 
 newsForm.addEventListener("submit", function (event) {
     event.preventDefault();
