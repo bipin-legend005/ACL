@@ -37,6 +37,8 @@ const team1ScoreInput = document.getElementById("team1-score");
 const team2ScoreInput = document.getElementById("team2-score");
 const team1OversInput = document.getElementById("team1-overs");
 const team2OversInput = document.getElementById("team2-overs");
+const team1WicketsInput = document.getElementById("team1-wickets");
+const team2WicketsInput = document.getElementById("team2-wickets");
 const openSiteBtn = document.getElementById("open-site-btn");
 const adminToggleBtn = document.getElementById("admin-toggle-btn");
 const adminLoginBox = document.getElementById("admin-login-box");
@@ -61,6 +63,8 @@ function normalizeMatch(match, fallback) {
     normalized.location = fallback.location || "Online";
     normalized.overs1 = match.overs1 || "";
     normalized.overs2 = match.overs2 || "";
+    normalized.wickets1 = match.wickets1 ?? "";
+    normalized.wickets2 = match.wickets2 ?? "";
     return normalized;
 }
 
@@ -183,6 +187,35 @@ function renderPointsTable() {
     `).join("");
 }
 
+function getTeamInitials(team) {
+    const words = team.split(" ");
+    return (words.length > 1 ? words.map(word => word[0]).join("") : team.slice(0, 2)).toUpperCase();
+}
+
+function renderTournamentStats() {
+    const totals = teams.map(team => ({ team, runs: 0, wickets: 0 }));
+
+    matches
+        .filter(match => !match.isPlayoff && match.status === "completed")
+        .forEach(match => {
+            const team1 = totals.find(item => item.team === match.team1);
+            const team2 = totals.find(item => item.team === match.team2);
+            if (!team1 || !team2) return;
+
+            team1.runs += Number(match.score1) || 0;
+            team2.runs += Number(match.score2) || 0;
+            team1.wickets += Number(match.wickets2) || 0;
+            team2.wickets += Number(match.wickets1) || 0;
+        });
+
+    const topRuns = [...totals].sort((a, b) => b.runs - a.runs)[0];
+    const topWickets = [...totals].sort((a, b) => b.wickets - a.wickets)[0];
+    document.getElementById("top-runs-team").textContent = topRuns.runs ? topRuns.team : "-";
+    document.getElementById("top-runs-value").textContent = `${topRuns.runs} runs`;
+    document.getElementById("top-wickets-team").textContent = topWickets.wickets ? topWickets.team : "-";
+    document.getElementById("top-wickets-value").textContent = `${topWickets.wickets} wickets taken`;
+}
+
 function renderSchedule() {
     const selectedTeam = teamSelector.value;
     const isAdminView = adminPanel && !adminPanel.classList.contains("hidden");
@@ -226,6 +259,7 @@ function renderSchedule() {
 
 function updateDashboard(team) {
     teamName.textContent = team.toUpperCase();
+    document.getElementById("team-badge").textContent = getTeamInitials(team);
 
     const standings = calculateStandings();
     const teamStats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
@@ -267,6 +301,46 @@ function updateNextMatch(team) {
     `;
 }
 
+function getMatchTimestamp(match) {
+    const [day, month] = match.date.split(" ");
+    const [time, meridiem] = match.time.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (meridiem === "PM" && hours !== 12) hours += 12;
+    if (meridiem === "AM" && hours === 12) hours = 0;
+    return new Date(`2026-${month === "Aug" ? "08" : "08"}-${day.padStart(2, "0")}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`);
+}
+
+function renderMatchCenter(team) {
+    const nextMatch = getTeamMatches(team).find(match => !match.isPlayoff && match.status === "upcoming") || matches.find(match => !match.isPlayoff && match.status === "upcoming");
+    if (!nextMatch) return;
+
+    document.getElementById("center-match-label").textContent = `MATCH ${nextMatch.id}`;
+    document.getElementById("center-match-title").textContent = `${nextMatch.team1} vs ${nextMatch.team2}`;
+    document.getElementById("center-match-meta").textContent = `${nextMatch.date} • ${nextMatch.time} • ${nextMatch.location}`;
+    const isCompleted = nextMatch.status === "completed";
+    document.getElementById("live-status").textContent = isCompleted ? "COMPLETED" : "UPCOMING";
+    document.getElementById("live-status").classList.toggle("completed", isCompleted);
+    updateCountdown(nextMatch);
+}
+
+function updateCountdown(match) {
+    const countdown = document.getElementById("countdown");
+    const update = () => {
+        const remaining = getMatchTimestamp(match).getTime() - Date.now();
+        if (remaining <= 0) {
+            countdown.textContent = "MATCH DAY";
+            return;
+        }
+        const hours = Math.floor(remaining / 3600000);
+        const minutes = Math.floor((remaining % 3600000) / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        countdown.textContent = `${String(hours).padStart(2, "0")} : ${String(minutes).padStart(2, "0")} : ${String(seconds).padStart(2, "0")}`;
+    };
+    update();
+    clearInterval(window.cplCountdown);
+    window.cplCountdown = setInterval(update, 1000);
+}
+
 function highlightTeamMatches(team) {
     const games = document.querySelectorAll(".game");
 
@@ -292,6 +366,8 @@ function fillScoresForSelectedMatch() {
     team2ScoreInput.value = selectedMatch.score2 || "";
     team1OversInput.value = selectedMatch.overs1 || "";
     team2OversInput.value = selectedMatch.overs2 || "";
+    team1WicketsInput.value = selectedMatch.wickets1 ?? "";
+    team2WicketsInput.value = selectedMatch.wickets2 ?? "";
 }
 
 function renderAll() {
@@ -300,11 +376,14 @@ function renderAll() {
     populateMatchSelect();
     fillScoresForSelectedMatch();
     updateDashboard(teamSelector.value);
+    renderTournamentStats();
+    renderMatchCenter(teamSelector.value);
 }
 
 teamSelector.addEventListener("change", function () {
     updateDashboard(this.value);
     renderSchedule();
+    renderMatchCenter(this.value);
 });
 
 openSiteBtn.addEventListener("click", function () {
@@ -360,13 +439,15 @@ resultForm.addEventListener("submit", function (event) {
     const score2 = Number(team2ScoreInput.value);
     const overs1 = team1OversInput.value;
     const overs2 = team2OversInput.value;
+    const wickets1 = Number(team1WicketsInput.value);
+    const wickets2 = Number(team2WicketsInput.value);
 
     if (!selectedMatch) {
         alert("Choose a valid match.");
         return;
     }
 
-    if (Number.isNaN(score1) || Number.isNaN(score2) || score1 < 0 || score2 < 0 || score1 === score2 || parseOvers(overs1) === null || parseOvers(overs2) === null) {
+    if (Number.isNaN(score1) || Number.isNaN(score2) || score1 < 0 || score2 < 0 || score1 === score2 || parseOvers(overs1) === null || parseOvers(overs2) === null || !Number.isInteger(wickets1) || !Number.isInteger(wickets2) || wickets1 < 0 || wickets1 > 10 || wickets2 < 0 || wickets2 > 10) {
         alert("Enter valid scores, overs in cricket format (for example 19.4), and make sure one team wins.");
         return;
     }
@@ -375,6 +456,8 @@ resultForm.addEventListener("submit", function (event) {
     selectedMatch.score2 = score2;
     selectedMatch.overs1 = overs1;
     selectedMatch.overs2 = overs2;
+    selectedMatch.wickets1 = wickets1;
+    selectedMatch.wickets2 = wickets2;
     selectedMatch.status = "completed";
     selectedMatch.winner = score1 > score2 ? selectedMatch.team1 : selectedMatch.team2;
 
