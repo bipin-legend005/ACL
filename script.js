@@ -15,6 +15,8 @@ const teamColors = {
 };
 
 const STORAGE_KEY = "cricketTournamentState";
+const PREDICTIONS_KEY = "cplPredictions";
+const NEWS_KEY = "cplOrganizerNews";
 
 const defaultMatches = [
     { id: 1, team1: "Matpady", team2: "Shivanagar", status: "upcoming", date: "28 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
@@ -40,6 +42,10 @@ const adminCredentials = {
 
 const teamSelector = document.getElementById("team");
 const teamName = document.getElementById("team-name");
+const formTeamLabel = document.getElementById("form-team-label");
+const formTrack = document.getElementById("form-track");
+const formStats = document.getElementById("form-stats");
+const formSummary = document.getElementById("form-summary");
 const resultMatchSelect = document.getElementById("result-match");
 const resultOutcomeSelect = document.getElementById("result-outcome");
 const team1ScoreInput = document.getElementById("team1-score");
@@ -58,6 +64,15 @@ const scheduleList = document.getElementById("schedule-list");
 const playoffList = document.getElementById("playoff-list");
 const pointsTableBody = document.getElementById("points-table-body");
 const matchCard = document.getElementById("match-card");
+const predictionList = document.getElementById("prediction-list");
+const newsList = document.getElementById("news-list");
+const newsForm = document.getElementById("news-form");
+const newsIdInput = document.getElementById("news-id");
+const newsTitleInput = document.getElementById("news-title");
+const newsMessageInput = document.getElementById("news-message");
+const newsSubmit = document.getElementById("news-submit");
+const newsCancel = document.getElementById("news-cancel");
+const adminNewsList = document.getElementById("admin-news-list");
 const playerOnlySections = [
     document.getElementById("team-selector-section"),
     document.getElementById("team-dashboard-section"),
@@ -65,6 +80,30 @@ const playerOnlySections = [
 ];
 
 let matches = loadMatches();
+let predictions = loadJSON(PREDICTIONS_KEY, {});
+let organizerNews = loadJSON(NEWS_KEY, []);
+
+function loadJSON(key, fallback) {
+    try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function saveJSON(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function escapeHTML(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
 function normalizeMatch(match, fallback) {
     if (!match || typeof match !== "object") return fallback;
@@ -109,6 +148,157 @@ function getTeamMatches(team) {
 
 function getTeamColor(team) {
     return teamColors[team] || "#7af6ff";
+}
+
+function getTeamForm(team) {
+    return matches
+        .filter(match => !match.isPlayoff && (match.team1 === team || match.team2 === team))
+        .sort((a, b) => a.id - b.id)
+        .map(match => {
+            if (match.status !== "completed") return { match, result: "—", className: "not-played" };
+            if (!match.winner) return { match, result: "NR", className: "no-result" };
+            return {
+                match,
+                result: match.winner === team ? "W" : "L",
+                className: match.winner === team ? "win" : "loss"
+            };
+        });
+}
+
+function renderFormGuide(team) {
+    const form = getTeamForm(team);
+    const standings = calculateStandings();
+    const stats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
+    const completedForm = form.filter(item => item.result !== "—");
+    const lastTwo = completedForm.slice(-2).map(item => item.result);
+
+    formTeamLabel.textContent = `${team.toUpperCase()} — FORM`;
+    formTrack.innerHTML = form.map(item => `
+        <span class="form-result ${item.className}" title="Match ${item.match.id}">${item.result}</span>
+    `).join("");
+    formStats.innerHTML = `
+        <span>Matches Played: <strong>${stats.played}</strong></span>
+        <span>Wins: <strong>${stats.wins}</strong></span>
+        <span>Losses: <strong>${stats.losses}</strong></span>
+        <span>Points: <strong>${stats.points}</strong></span>
+    `;
+
+    if (!stats.played) {
+        formSummary.textContent = "🆕 No matches played yet.";
+    } else if (lastTwo.length === 2 && lastTwo.every(result => result === "W")) {
+        formSummary.textContent = "📈 Strong finish — won the last 2 matches.";
+    } else if (lastTwo.length === 2 && lastTwo.every(result => result === "L")) {
+        formSummary.textContent = "⚠️ Needs a turnaround — lost the last 2 matches.";
+    } else if (stats.wins >= 3) {
+        formSummary.textContent = `🔥 Excellent form — ${stats.wins} wins from ${stats.played} matches.`;
+    } else {
+        formSummary.textContent = `${stats.wins ? "📊 Building momentum" : "🟡 Still searching for a win"} — ${stats.wins} wins from ${stats.played} matches.`;
+    }
+}
+
+function getPrediction(match) {
+    const saved = predictions[match.id] || {};
+    return {
+        team1: Number(saved.team1) || 0,
+        team2: Number(saved.team2) || 0,
+        choice: saved.choice || null
+    };
+}
+
+function predictionPercentages(match) {
+    const prediction = getPrediction(match);
+    const total = prediction.team1 + prediction.team2;
+    return {
+        prediction,
+        team1: total ? Math.round(prediction.team1 / total * 100) : 50,
+        team2: total ? Math.round(prediction.team2 / total * 100) : 50
+    };
+}
+
+function renderPredictions() {
+    const predictionMatches = matches.filter(match => !match.isPlayoff);
+
+    predictionList.innerHTML = predictionMatches.map(match => {
+        const percentages = predictionPercentages(match);
+        const { prediction } = percentages;
+        const completed = match.status === "completed";
+        const communityTeam = prediction.team1 || prediction.team2
+            ? (prediction.team1 >= prediction.team2 ? match.team1 : match.team2)
+            : "No votes yet";
+        const communityPercent = prediction.team1 || prediction.team2
+            ? Math.max(percentages.team1, percentages.team2)
+            : 0;
+        const actualResult = match.winner || "Tie / No Result";
+        const resultMessage = completed
+            ? `<div class="prediction-result"><strong>PREDICTION RESULT</strong><span>Community predicted: ${communityTeam}${communityPercent ? ` — ${communityPercent}%` : ""}</span><span>Actual result: ${actualResult} ${match.winner ? (communityTeam === match.winner ? "✅" : "❌") : ""}</span><small>${match.winner && communityTeam === match.winner ? "Community got it right!" : match.winner ? "Community prediction was incorrect." : "Prediction locked after a tie / no result."}</small></div>`
+            : `<div class="vote-actions"><button type="button" data-predict="${match.id}" data-team="1" class="${prediction.choice === match.team1 ? "voted" : ""}">Vote ${match.team1}</button><button type="button" data-predict="${match.id}" data-team="2" class="${prediction.choice === match.team2 ? "voted" : ""}">Vote ${match.team2}</button></div>`;
+
+        return `
+            <article class="prediction-card">
+                <div class="prediction-header"><span>Match ${match.id}</span><strong>${completed ? "LOCKED" : "WHO WILL WIN?"}</strong></div>
+                <div class="prediction-teams"><span>${match.team1} <b>${percentages.team1}%</b></span><span><b>${percentages.team2}%</b> ${match.team2}</span></div>
+                <div class="prediction-bar"><i style="width: ${percentages.team1}%"></i></div>
+                ${resultMessage}
+            </article>
+        `;
+    }).join("");
+}
+
+function formatNewsDate(date = new Date()) {
+    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+}
+
+function getAutomaticNews() {
+    const standings = calculateStandings();
+    const news = [];
+    const winCounts = Object.fromEntries(teams.map(team => [team, 0]));
+    const completedLeagueMatches = matches.filter(match => !match.isPlayoff && match.status === "completed");
+
+    completedLeagueMatches.forEach(match => {
+        if (!match.winner) return;
+        winCounts[match.winner] += 1;
+        const loser = match.winner === match.team1 ? match.team2 : match.team1;
+        const firstWin = winCounts[match.winner] === 1;
+        news.push({
+            type: firstWin ? "TOURNAMENT UPDATE" : "MATCH UPDATE",
+            title: firstWin ? `🆕 ${match.winner} record their first-ever tournament victory!` : `🔥 ${match.winner} defeat ${loser}!`,
+            date: `${match.date} 2026`,
+            key: `win-${match.id}`
+        });
+    });
+
+    standings.forEach(team => {
+        if (team.qualification === "QUALIFIED") {
+            news.push({ type: "PLAYOFF RACE", title: `🟢 ${team.team} have qualified for the playoffs!`, date: formatNewsDate(), key: `qualified-${team.team}` });
+        } else if (team.qualification === "ELIMINATED") {
+            news.push({ type: "PLAYOFF RACE", title: `🔴 ${team.team} have been eliminated from playoff contention.`, date: formatNewsDate(), key: `eliminated-${team.team}` });
+        }
+    });
+
+    const leagueMatches = matches.filter(match => !match.isPlayoff);
+    if (leagueMatches.length && leagueMatches.every(match => match.status === "completed")) {
+        news.push({ type: "PLAYOFF UPDATE", title: "🏆 The playoff bracket is locked!", date: formatNewsDate(), key: "league-locked" });
+    }
+
+    return news;
+}
+
+function renderNews() {
+    const news = [...organizerNews.map(item => ({ ...item, type: "ORGANIZER ANNOUNCEMENT" })), ...getAutomaticNews()];
+    newsList.innerHTML = news.length ? news.map(item => `
+        <article class="news-card">
+            <span class="news-type">${escapeHTML(item.type)}</span>
+            <h3>${escapeHTML(item.title)}</h3>
+            ${item.message ? `<p>${escapeHTML(item.message)}</p>` : ""}
+            <small>${escapeHTML(item.date || formatNewsDate())}</small>
+        </article>
+    `).join("") : `<div class="empty-state">News will appear here as tournament events happen.</div>`;
+}
+
+function renderAdminNews() {
+    adminNewsList.innerHTML = organizerNews.length ? organizerNews.map(item => `
+        <div class="admin-news-item"><span>${escapeHTML(item.title)}</span><div><button type="button" data-edit-news="${item.id}" class="secondary-btn">Edit</button><button type="button" data-delete-news="${item.id}" class="secondary-btn">Delete</button></div></div>
+    `).join("") : `<small class="empty-state">No organizer announcements yet.</small>`;
 }
 
 function calculateStandings() {
@@ -329,6 +519,7 @@ function updateDashboard(team) {
 
     updateNextMatch(team);
     highlightTeamMatches(team);
+    renderFormGuide(team);
 }
 
 function updateNextMatch(team) {
@@ -407,6 +598,9 @@ function renderAll() {
     populateMatchSelect();
     fillScoresForSelectedMatch();
     updateDashboard(teamSelector.value);
+    renderPredictions();
+    renderNews();
+    renderAdminNews();
 }
 
 teamSelector.addEventListener("change", function () {
@@ -499,5 +693,80 @@ resultForm.addEventListener("submit", function (event) {
 });
 
 resultMatchSelect.addEventListener("change", fillScoresForSelectedMatch);
+
+predictionList.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-predict]");
+    if (!button) return;
+
+    const matchId = Number(button.dataset.predict);
+    const teamNumber = Number(button.dataset.team);
+    const match = matches.find(item => item.id === matchId);
+    if (!match || match.status === "completed") return;
+
+    const prediction = getPrediction(match);
+    if (prediction.choice === match.team1) prediction.team1 = Math.max(0, prediction.team1 - 1);
+    if (prediction.choice === match.team2) prediction.team2 = Math.max(0, prediction.team2 - 1);
+    if (teamNumber === 1) prediction.team1 += 1;
+    if (teamNumber === 2) prediction.team2 += 1;
+    prediction.choice = teamNumber === 1 ? match.team1 : match.team2;
+    predictions[matchId] = prediction;
+    saveJSON(PREDICTIONS_KEY, predictions);
+    renderPredictions();
+});
+
+newsForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const title = newsTitleInput.value.trim();
+    const message = newsMessageInput.value.trim();
+    if (!title || !message) return;
+
+    const existingId = Number(newsIdInput.value);
+    if (existingId) {
+        const item = organizerNews.find(news => news.id === existingId);
+        if (item) {
+            item.title = title;
+            item.message = message;
+        }
+    } else {
+        organizerNews.unshift({ id: Date.now(), title, message, date: formatNewsDate() });
+    }
+
+    saveJSON(NEWS_KEY, organizerNews);
+    resetNewsForm();
+    renderNews();
+    renderAdminNews();
+});
+
+function resetNewsForm() {
+    newsForm.reset();
+    newsIdInput.value = "";
+    newsSubmit.textContent = "Add Announcement";
+    newsCancel.classList.add("hidden");
+}
+
+newsCancel.addEventListener("click", resetNewsForm);
+
+adminNewsList.addEventListener("click", function (event) {
+    const editButton = event.target.closest("[data-edit-news]");
+    const deleteButton = event.target.closest("[data-delete-news]");
+
+    if (editButton) {
+        const item = organizerNews.find(news => news.id === Number(editButton.dataset.editNews));
+        if (!item) return;
+        newsIdInput.value = item.id;
+        newsTitleInput.value = item.title;
+        newsMessageInput.value = item.message;
+        newsSubmit.textContent = "Update Announcement";
+        newsCancel.classList.remove("hidden");
+        newsTitleInput.focus();
+    }
+
+    if (deleteButton) {
+        organizerNews = organizerNews.filter(news => news.id !== Number(deleteButton.dataset.deleteNews));
+        saveJSON(NEWS_KEY, organizerNews);
+        renderNews();
+        renderAdminNews();
+    }
+});
 
 renderAll();

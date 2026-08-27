@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CPL</title>
-    <link rel="stylesheet" href="style.css?v=20260827">
-    <script src="script.js?v=20260827" defer></script>
+    <link rel="stylesheet" href="style.css?v=20260828">
+    <script src="script.js?v=20260828" defer></script>
 </head>
 
 <body>
@@ -87,6 +87,20 @@
 
         <button type="submit">Save Result</button>
     </form>
+
+    <div class="admin-news-manager">
+        <h3>Organizer News</h3>
+        <form id="news-form">
+            <input type="hidden" id="news-id">
+            <input type="text" id="news-title" placeholder="Announcement title" required>
+            <textarea id="news-message" placeholder="Announcement message" rows="3" required></textarea>
+            <div class="news-form-actions">
+                <button type="submit" id="news-submit">Add Announcement</button>
+                <button type="button" class="secondary-btn hidden" id="news-cancel">Cancel Edit</button>
+            </div>
+        </form>
+        <div id="admin-news-list"></div>
+    </div>
 </section>
 
 <main id="site-main" class="hidden">
@@ -142,6 +156,42 @@
         <h2>🔥 NEXT MATCH</h2>
 
         <div class="match-card" id="match-card"></div>
+    </section>
+
+    <!-- FORM GUIDE -->
+    <section class="feature-section" id="form-guide">
+        <div class="section-title-row">
+            <div>
+                <p class="eyebrow">RECENT RESULTS</p>
+                <h2>🏏 FORM GUIDE</h2>
+            </div>
+            <span class="team-form-label" id="form-team-label">KOLAMBE</span>
+        </div>
+        <div class="form-track" id="form-track"></div>
+        <div class="form-stats" id="form-stats"></div>
+        <p class="form-summary" id="form-summary"></p>
+    </section>
+
+    <!-- PREDICTIONS -->
+    <section class="feature-section" id="prediction-corner">
+        <div class="section-title-row">
+            <div>
+                <p class="eyebrow">COMMUNITY PICKS</p>
+                <h2>🔮 PREDICTION CORNER</h2>
+            </div>
+        </div>
+        <div class="prediction-list" id="prediction-list"></div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="feature-section" id="tournament-news">
+        <div class="section-title-row">
+            <div>
+                <p class="eyebrow">THE CPL DESK</p>
+                <h2>📰 TOURNAMENT NEWS</h2>
+            </div>
+        </div>
+        <div class="news-list" id="news-list"></div>
     </section>
 
     <!-- SCHEDULE -->
