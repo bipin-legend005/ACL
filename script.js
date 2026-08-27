@@ -16,7 +16,7 @@ const teamColors = {
 
 const STORAGE_KEY = "cricketTournamentState";
 const REPRESENTATIONS_KEY = "rclTeamRepresentations";
-const representationOptions = ["India", "Australia", "England", "South Africa", "New Zealand", "Pakistan", "Sri Lanka", "West Indies"];
+const representationOptions = ["India", "Australia", "England", "South Africa", "New Zealand"];
 const NEWS_KEY = "cplOrganizerNews";
 
 const defaultMatches = [
