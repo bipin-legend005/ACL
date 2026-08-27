@@ -6,6 +6,14 @@ const teams = [
     "Devabailu"
 ];
 
+const teamColors = {
+    Kolambe: "#00f5d4",
+    Shivanagar: "#ff4ecd",
+    Matpady: "#b8ff3d",
+    Chanthar: "#ff9f1c",
+    Devabailu: "#9b5cff"
+};
+
 const STORAGE_KEY = "cricketTournamentState";
 
 const defaultMatches = [
@@ -95,6 +103,10 @@ function getTeamMatches(team) {
     return matches.filter(match => match.team1 === team || match.team2 === team);
 }
 
+function getTeamColor(team) {
+    return teamColors[team] || "#7af6ff";
+}
+
 function calculateStandings() {
     const standings = teams.map(team => ({
         team,
@@ -173,7 +185,7 @@ function renderPointsTable() {
     pointsTableBody.innerHTML = standings.map((team, index) => `
         <tr>
             <td>${index + 1}</td>
-            <td>${team.team}</td>
+            <td class="team-cell"><span class="team-dot" style="--team-color: ${getTeamColor(team.team)}"></span><strong style="color: ${getTeamColor(team.team)}">${team.team}</strong></td>
             <td>${team.played}</td>
             <td>${team.wins}</td>
             <td>${team.losses}</td>
@@ -203,9 +215,9 @@ function renderSchedule() {
                 : `<small>${match.date} • ${match.time || "8:00 PM"} • ${match.location || "Online"}</small>`;
 
             return `
-                <div class="game ${isSelectedTeam ? "highlighted" : ""}">
+                <div class="game ${isSelectedTeam ? "highlighted" : ""}" style="--team-color: ${getTeamColor(match.team1)}; --team-color-alt: ${getTeamColor(match.team2)}">
                     <b>Match ${match.id}</b>
-                    <span>${match.team1} vs ${match.team2}</span>
+                    <span><strong style="color: ${getTeamColor(match.team1)}">${match.team1}</strong> <em>vs</em> <strong style="color: ${getTeamColor(match.team2)}">${match.team2}</strong></span>
                     ${resultText}
                 </div>
             `;
@@ -214,9 +226,9 @@ function renderSchedule() {
 
     playoffList.innerHTML = playoffMatches.length
         ? playoffMatches.map(match => `
-            <div class="playoff ${match.label === "FINAL" ? "final" : ""}">
+            <div class="playoff ${match.label === "FINAL" ? "final" : ""}" style="--team-color: ${getTeamColor(match.team1)}; --team-color-alt: ${getTeamColor(match.team2)}">
                 <h3>${match.label}</h3>
-                <p>${match.team1} vs ${match.team2}</p>
+                <p><strong style="color: ${getTeamColor(match.team1)}">${match.team1}</strong> <em>vs</em> <strong style="color: ${getTeamColor(match.team2)}">${match.team2}</strong></p>
                 <small>${match.date}</small>
                 ${match.status === "completed" ? `<small>Result: ${match.winner} won</small>` : `<small>Winner → ${match.label === "QUALIFIER 1" ? "Final" : match.label === "ELIMINATOR" ? "Qualifier 2" : "Final"}</small>`}
             </div>
@@ -226,6 +238,7 @@ function renderSchedule() {
 
 function updateDashboard(team) {
     teamName.textContent = team.toUpperCase();
+    teamName.style.color = getTeamColor(team);
 
     const standings = calculateStandings();
     const teamStats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
@@ -272,7 +285,7 @@ function highlightTeamMatches(team) {
 
     games.forEach(game => {
         const isTeamMatch = game.textContent.includes(team);
-        game.style.border = isTeamMatch ? "2px solid #f5c542" : "none";
+        game.style.border = isTeamMatch ? `2px solid ${getTeamColor(team)}` : "none";
         game.style.opacity = isTeamMatch ? "1" : "0.45";
     });
 }

@@ -413,6 +413,7 @@ button:hover {
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     transition: transform 0.2s ease, border-color 0.2s ease;
+    border-left: 4px solid var(--team-color, var(--cyan));
 }
 
 .game:hover {
@@ -438,6 +439,13 @@ button:hover {
     margin: 8px 0;
     color: var(--text);
     font-weight: 600;
+}
+
+.game span em,
+.playoff p em {
+    color: var(--muted);
+    font-style: normal;
+    margin: 0 5px;
 }
 
 .game small {
@@ -478,6 +486,20 @@ td {
     font-weight: 600;
 }
 
+.team-cell {
+    white-space: nowrap;
+}
+
+.team-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--team-color);
+    box-shadow: 0 0 12px var(--team-color);
+}
+
 .playoffs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -490,6 +512,15 @@ td {
     background: rgba(11, 25, 42, 0.38);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
+    border-top: 4px solid var(--team-color, var(--cyan));
+}
+
+.playoff p strong:first-child {
+    color: var(--team-color);
+}
+
+.playoff p strong:last-of-type {
+    color: var(--team-color-alt);
 }
 
 .playoff h3 {
