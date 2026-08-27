@@ -20,6 +20,7 @@
     <a href="#schedule">Schedule</a>
     <a href="#points">Points Table</a>
     <a href="#playoffs">Playoffs</a>
+    <a href="#rules">Rules</a>
 </nav>
 
 <section class="auth-container" id="auth-container">
@@ -56,8 +57,14 @@
         <label>
             Result Type
             <select id="result-outcome">
-                <option value="win">Winner</option>
+                <option value="team1-win">Team 1 Won</option>
+                <option value="team2-win">Team 2 Won</option>
                 <option value="tie">Tie / No Result</option>
+                <option value="network">Network Issue / No Result</option>
+                <option value="team1-noshow">Team 1 No-Show / Forfeit</option>
+                <option value="team2-noshow">Team 2 No-Show / Forfeit</option>
+                <option value="team1-quit">Team 1 Quit / Forfeit</option>
+                <option value="team2-quit">Team 2 Quit / Forfeit</option>
             </select>
         </label>
 
@@ -87,6 +94,12 @@
 
         <button type="submit">Save Result</button>
     </form>
+
+    <div class="admin-team-manager">
+        <h3>Locked Team Representations</h3>
+        <div id="team-representation-list"></div>
+        <button type="button" id="save-representations">Save Representations</button>
+    </div>
 
     <div class="admin-news-manager">
         <h3>Organizer News</h3>
@@ -124,6 +137,7 @@
         <div class="team-info">
             <h2 id="team-name">KOLAMBE</h2>
             <p>Team Dashboard</p>
+            <p id="team-representation">Representing: Not assigned</p>
             <strong id="qualification-status">Q3</strong>
         </div>
 
@@ -217,6 +231,19 @@
         <h2>🏆 PLAYOFFS</h2>
 
         <div class="playoffs" id="playoff-list"></div>
+    </section>
+
+    <section class="feature-section rules-section" id="rules">
+        <p class="eyebrow">OFFICIAL COMPETITION POLICY</p>
+        <h2>🏏 RCL TOURNAMENT RULES</h2>
+        <div class="rules-grid">
+            <article class="rule-card"><h3>1. Locked Teams 🇮🇳</h3><p>Each team represents one national or international team. The selection is locked for the tournament once play begins.</p><p>Organizer changes are allowed only before the first league result is recorded.</p></article>
+            <article class="rule-card"><h3>2. Powerplay ⚡</h3><p><strong>Powerplay: First 2 overs of every match.</strong></p></article>
+            <article class="rule-card"><h3>3. Network Issue 📶</h3><p>The organizer must manually confirm a genuine connectivity issue. The match becomes <strong>NO RESULT</strong>, both teams receive 1 point, and neither gets a win or loss.</p></article>
+            <article class="rule-card"><h3>4. No-Show 🚫</h3><p>A confirmed no-show is a <strong>FORFEIT</strong>: the opponent receives 2 points and the absent team receives 0.</p></article>
+            <article class="rule-card"><h3>5. Quit / Surrender 🏳️</h3><p>A confirmed surrender is a <strong>FORFEIT — QUIT</strong>: the opponent receives 2 points and the quitting team receives 0.</p></article>
+            <article class="rule-card"><h3>Points System</h3><p>Win: 2 points. No Result / Draw: 1 point each. No-Show or Quit: opponent gets 2 points. Loss: 0 points.</p></article>
+        </div>
     </section>
 
 </main>

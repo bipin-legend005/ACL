@@ -15,6 +15,8 @@ const teamColors = {
 };
 
 const STORAGE_KEY = "cricketTournamentState";
+const REPRESENTATIONS_KEY = "rclTeamRepresentations";
+const representationOptions = ["India", "Australia", "England", "South Africa", "New Zealand", "Pakistan", "Sri Lanka", "West Indies"];
 const NEWS_KEY = "cplOrganizerNews";
 
 const defaultMatches = [
@@ -41,6 +43,7 @@ const adminCredentials = {
 
 const teamSelector = document.getElementById("team");
 const teamName = document.getElementById("team-name");
+const teamRepresentation = document.getElementById("team-representation");
 const formTeamLabel = document.getElementById("form-team-label");
 const formTrack = document.getElementById("form-track");
 const formStats = document.getElementById("form-stats");
@@ -71,6 +74,8 @@ const newsMessageInput = document.getElementById("news-message");
 const newsSubmit = document.getElementById("news-submit");
 const newsCancel = document.getElementById("news-cancel");
 const adminNewsList = document.getElementById("admin-news-list");
+const teamRepresentationList = document.getElementById("team-representation-list");
+const saveRepresentationsButton = document.getElementById("save-representations");
 const playerOnlySections = [
     document.getElementById("team-selector-section"),
     document.getElementById("team-dashboard-section"),
@@ -79,6 +84,7 @@ const playerOnlySections = [
 
 let matches = loadMatches();
 let organizerNews = loadJSON(NEWS_KEY, []);
+let teamRepresentations = loadJSON(REPRESENTATIONS_KEY, {});
 
 function loadJSON(key, fallback) {
     try {
@@ -114,6 +120,7 @@ function normalizeMatch(match, fallback) {
     normalized.location = fallback.location || "Online";
     normalized.overs1 = match.overs1 || "";
     normalized.overs2 = match.overs2 || "";
+    normalized.resultType = match.resultType || (match.winner ? "win" : "tie");
     return normalized;
 }
 
@@ -142,6 +149,10 @@ function saveMatches() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(matches));
 }
 
+function tournamentStarted() {
+    return matches.some(match => !match.isPlayoff && match.status === "completed");
+}
+
 function getTeamMatches(team) {
     return matches.filter(match => match.team1 === team || match.team2 === team);
 }
@@ -156,7 +167,7 @@ function getTeamForm(team) {
         .sort((a, b) => a.id - b.id)
         .map(match => {
             if (match.status !== "completed") return { match, result: "—", className: "not-played" };
-            if (!match.winner) return { match, result: "NR", className: "no-result" };
+            if (!match.winner && match.resultType !== "team1-noshow" && match.resultType !== "team2-noshow" && match.resultType !== "team1-quit" && match.resultType !== "team2-quit") return { match, result: "NR", className: "no-result" };
             return {
                 match,
                 result: match.winner === team ? "W" : "L",
@@ -219,6 +230,18 @@ function getAutomaticNews() {
         });
     });
 
+    completedLeagueMatches.forEach(match => {
+        if (match.resultType === "network") {
+            news.push({ type: "MATCH UPDATE", title: `📶 ${match.team1} vs ${match.team2} ended as a No Result due to network issues. Both teams receive 1 point.`, date: `${match.date} 2026`, key: `network-${match.id}` });
+        }
+        if (["team1-noshow", "team2-noshow", "team1-quit", "team2-quit"].includes(match.resultType)) {
+            const affectedTeam = match.resultType.includes("team1") ? match.team1 : match.team2;
+            const opponent = affectedTeam === match.team1 ? match.team2 : match.team1;
+            const quit = match.resultType.includes("quit");
+            news.push({ type: quit ? "MATCH FORFEIT" : "FORFEIT", title: quit ? `🏳️ ${affectedTeam} surrendered the match. ${opponent} receive 2 points.` : `🚨 ${opponent} were awarded 2 points after ${affectedTeam} failed to show up.`, date: `${match.date} 2026`, key: `forfeit-${match.id}` });
+        }
+    });
+
     standings.forEach(team => {
         if (team.qualification === "QUALIFIED") {
             news.push({ type: "PLAYOFF RACE", title: `🟢 ${team.team} have qualified for the playoffs!`, date: formatNewsDate(), key: `qualified-${team.team}` });
@@ -251,6 +274,15 @@ function renderAdminNews() {
     adminNewsList.innerHTML = organizerNews.length ? organizerNews.map(item => `
         <div class="admin-news-item"><span>${escapeHTML(item.title)}</span><div><button type="button" data-edit-news="${item.id}" class="secondary-btn">Edit</button><button type="button" data-delete-news="${item.id}" class="secondary-btn">Delete</button></div></div>
     `).join("") : `<small class="empty-state">No organizer announcements yet.</small>`;
+}
+
+function renderTeamRepresentations() {
+    const locked = tournamentStarted();
+    teamRepresentationList.innerHTML = teams.map(team => `
+        <label class="representation-row"><span>${team}</span><select data-representation="${team}" ${locked ? "disabled" : ""}><option value="">Not assigned</option>${representationOptions.map(country => `<option value="${country}" ${teamRepresentations[team] === country ? "selected" : ""}>${country}</option>`).join("")}</select></label>
+    `).join("");
+    saveRepresentationsButton.disabled = locked;
+    saveRepresentationsButton.title = locked ? "Representations are locked after the tournament starts" : "Save team representations";
 }
 
 function calculateStandings() {
@@ -292,7 +324,13 @@ function calculateStandings() {
                 team2.ballsBowled += overs1;
             }
 
-            if (match.winner === match.team1) {
+            if (["team1-noshow", "team1-quit"].includes(match.resultType)) {
+                team2.points += 2;
+                team1.losses += 1;
+            } else if (["team2-noshow", "team2-quit"].includes(match.resultType)) {
+                team1.points += 2;
+                team2.losses += 1;
+            } else if (match.winner === match.team1) {
                 team1.wins += 1;
                 team1.points += 2;
                 team2.losses += 1;
@@ -304,6 +342,7 @@ function calculateStandings() {
                 team1.points += 1;
                 team2.points += 1;
             }
+
         });
 
     standings.forEach(team => {
@@ -401,7 +440,8 @@ function renderPointsTable() {
 
 function getPlayoffBracket() {
     const standings = calculateStandings();
-    const qualificationConfirmed = standings[0]?.qualification !== "PENDING";
+    const leagueMatches = matches.filter(match => !match.isPlayoff);
+    const qualificationConfirmed = leagueMatches.length > 0 && leagueMatches.every(match => match.status === "completed");
     const teamAt = position => standings[position - 1]?.team || `Q${position}`;
 
     return [
@@ -429,7 +469,7 @@ function renderSchedule() {
         ? leagueMatches.map(match => {
             const isSelectedTeam = match.team1 === selectedTeam || match.team2 === selectedTeam;
             const resultText = match.status === "completed"
-                ? `<small>${match.winner ? `${match.team1} ${match.score1} - ${match.score2} ${match.team2}` : "Tie / No Result"}</small>`
+                        ? `<small>${match.resultType === "network" ? "NO RESULT • NETWORK ISSUE" : match.resultType?.includes("noshow") ? "FORFEIT • NO-SHOW" : match.resultType?.includes("quit") ? "FORFEIT • QUIT" : match.winner ? `${match.team1} ${match.score1} - ${match.score2} ${match.team2}` : "Tie / No Result"}</small>`
                 : `<small>${match.date} • ${match.time || "8:00 PM"} • ${match.location || "Online"}</small>`;
 
             return `
@@ -457,6 +497,9 @@ function renderSchedule() {
 function updateDashboard(team) {
     teamName.textContent = team.toUpperCase();
     teamName.style.color = getTeamColor(team);
+    teamRepresentation.textContent = teamRepresentations[team]
+        ? `Representing: 🇮🇳 ${teamRepresentations[team]}  |  🔒 Team Locked`
+        : "Representing: Not assigned";
 
     const standings = calculateStandings();
     const teamStats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
@@ -541,7 +584,7 @@ function fillScoresForSelectedMatch() {
     team2ScoreInput.value = selectedMatch.score2 || "";
     team1OversInput.value = selectedMatch.overs1 || "";
     team2OversInput.value = selectedMatch.overs2 || "";
-    resultOutcomeSelect.value = selectedMatch.winner ? "win" : "tie";
+    resultOutcomeSelect.value = selectedMatch.winner === selectedMatch.team1 ? "team1-win" : selectedMatch.winner === selectedMatch.team2 ? "team2-win" : selectedMatch.resultType || "tie";
 }
 
 function renderAll() {
@@ -552,6 +595,7 @@ function renderAll() {
     updateDashboard(teamSelector.value);
     renderNews();
     renderAdminNews();
+    renderTeamRepresentations();
 }
 
 teamSelector.addEventListener("change", function () {
@@ -616,6 +660,7 @@ resultForm.addEventListener("submit", function (event) {
     const hasScores = team1ScoreInput.value !== "" && team2ScoreInput.value !== "";
     const isNoResult = outcome === "tie" && !hasScores;
     const validOvers = parseOvers(overs1) !== null && parseOvers(overs2) !== null;
+    const specialResult = ["network", "team1-noshow", "team2-noshow", "team1-quit", "team2-quit"].includes(outcome);
 
     if (!selectedMatch) {
         alert("Choose a valid match.");
@@ -623,20 +668,24 @@ resultForm.addEventListener("submit", function (event) {
     }
 
     const validScores = hasScores && !Number.isNaN(score1) && !Number.isNaN(score2) && score1 >= 0 && score2 >= 0;
-    const validWin = outcome === "win" && validScores && score1 !== score2 && validOvers;
-    const validTie = outcome === "tie" && (isNoResult || (validScores && score1 === score2 && validOvers));
+    if (specialResult && !window.confirm(`Confirm special result: ${resultMatchSelect.options[resultMatchSelect.selectedIndex].text}`)) return;
 
-    if (!validWin && !validTie) {
+    const validWin = ["team1-win", "team2-win"].includes(outcome) && validScores && score1 !== score2 && validOvers;
+    const validTie = outcome === "tie" && (isNoResult || (validScores && score1 === score2 && validOvers));
+    const validSpecial = specialResult;
+
+    if (!validWin && !validTie && !validSpecial) {
         alert("Enter valid scores and overs, or choose Tie / No Result for a tied or abandoned match.");
         return;
     }
 
-    selectedMatch.score1 = isNoResult ? "" : score1;
-    selectedMatch.score2 = isNoResult ? "" : score2;
-    selectedMatch.overs1 = isNoResult ? "" : overs1;
-    selectedMatch.overs2 = isNoResult ? "" : overs2;
+    selectedMatch.score1 = isNoResult || specialResult ? "" : score1;
+    selectedMatch.score2 = isNoResult || specialResult ? "" : score2;
+    selectedMatch.overs1 = isNoResult || specialResult ? "" : overs1;
+    selectedMatch.overs2 = isNoResult || specialResult ? "" : overs2;
     selectedMatch.status = "completed";
-    selectedMatch.winner = outcome === "win" ? (score1 > score2 ? selectedMatch.team1 : selectedMatch.team2) : "";
+    selectedMatch.resultType = outcome;
+    selectedMatch.winner = outcome === "team1-win" ? selectedMatch.team1 : outcome === "team2-win" ? selectedMatch.team2 : ["team1-noshow", "team1-quit"].includes(outcome) ? selectedMatch.team2 : ["team2-noshow", "team2-quit"].includes(outcome) ? selectedMatch.team1 : "";
 
     saveMatches();
     renderAll();
@@ -676,6 +725,16 @@ function resetNewsForm() {
 }
 
 newsCancel.addEventListener("click", resetNewsForm);
+
+saveRepresentationsButton.addEventListener("click", function () {
+    if (tournamentStarted()) return;
+    document.querySelectorAll("[data-representation]").forEach(select => {
+        if (select.value) teamRepresentations[select.dataset.representation] = select.value;
+        else delete teamRepresentations[select.dataset.representation];
+    });
+    saveJSON(REPRESENTATIONS_KEY, teamRepresentations);
+    renderAll();
+});
 
 adminNewsList.addEventListener("click", function (event) {
     const editButton = event.target.closest("[data-edit-news]");

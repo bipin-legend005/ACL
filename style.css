@@ -216,13 +216,42 @@ table {
     align-items: center;
     gap: 15px;
     margin-bottom: 18px;
+.admin-team-manager {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(122, 246, 255, 0.16);
+}
+
+.admin-team-manager h3 {
+    margin-bottom: 14px;
+    color: var(--yellow);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.representation-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.representation-row select {
+    margin-top: 0;
+}
+
+.admin-team-manager button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
 }
 
 #admin-login-form,
 #result-form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
 }
 
 #admin-login-form input,
@@ -733,6 +762,39 @@ td {
     box-shadow: 0 0 22px rgba(247, 211, 90, 0.12);
 }
 
+.rules-section h2 {
+    margin-top: 6px;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.rule-card {
+    padding: 18px;
+    background: rgba(8, 20, 35, 0.32);
+    border: 1px solid rgba(122, 246, 255, 0.18);
+    border-radius: 14px;
+}
+
+.rule-card h3 {
+    margin-bottom: 10px;
+    color: var(--yellow);
+    font-size: 0.95rem;
+}
+
+.rule-card p {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.rule-card p + p {
+    margin-top: 10px;
+}
+
 footer {
     text-align: center;
     padding: 26px 18px 36px;
@@ -758,7 +820,8 @@ footer {
     .stats,
     .schedule,
     .playoffs,
-    .news-list {
+    .news-list,
+    .rules-grid {
         grid-template-columns: 1fr;
     }
 
@@ -777,9 +840,14 @@ footer {
 
     .section-title-row,
     .news-form-actions,
-    .admin-news-item {
+    .admin-news-item,
+    .representation-row {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .representation-row {
+        display: flex;
     }
 
     table {
