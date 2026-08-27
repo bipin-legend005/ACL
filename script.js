@@ -92,10 +92,8 @@ function loadMatches() {
             return fallbackMatches;
         }
 
-        return parsed.map((match) => {
-            const fallback = fallbackMatches.find(item => item.id === match.id) || fallbackMatches[0];
-            return normalizeMatch(match, fallback);
-        });
+        const savedById = new Map(parsed.map(match => [match.id, match]));
+        return fallbackMatches.map(fallback => normalizeMatch(savedById.get(fallback.id), fallback));
     } catch (error) {
         return fallbackMatches;
     }
@@ -172,12 +170,15 @@ function calculateStandings() {
             : 0;
     });
 
+    const leagueMatches = matches.filter(match => !match.isPlayoff);
+    const leagueComplete = leagueMatches.length > 0 && leagueMatches.every(match => match.status === "completed");
+
     return standings
         .sort((a, b) => b.points - a.points || b.nrr - a.nrr || b.runsFor - a.runsFor || a.team.localeCompare(b.team))
         .map((team, index) => ({
             ...team,
             position: index + 1,
-            qualification: index < 4 ? `Q${index + 1}` : "ELIMINATED"
+            qualification: leagueComplete ? (index < 4 ? `Q${index + 1}` : "ELIMINATED") : "PENDING"
         }));
 }
 
@@ -213,11 +214,12 @@ function renderPointsTable() {
 
 function getPlayoffBracket() {
     const standings = calculateStandings();
+    const qualificationConfirmed = standings[0]?.qualification !== "PENDING";
     const teamAt = position => standings[position - 1]?.team || `Q${position}`;
 
     return [
-        { match: matches.find(item => item.label === "QUALIFIER 1"), label: "QUALIFIER 1", team1: teamAt(1), team2: teamAt(2) },
-        { match: matches.find(item => item.label === "ELIMINATOR"), label: "ELIMINATOR", team1: teamAt(3), team2: teamAt(4) },
+        { match: matches.find(item => item.label === "QUALIFIER 1"), label: "QUALIFIER 1", team1: qualificationConfirmed ? teamAt(1) : "Qualification pending", team2: qualificationConfirmed ? teamAt(2) : "Qualification pending" },
+        { match: matches.find(item => item.label === "ELIMINATOR"), label: "ELIMINATOR", team1: qualificationConfirmed ? teamAt(3) : "Qualification pending", team2: qualificationConfirmed ? teamAt(4) : "Qualification pending" },
         { match: matches.find(item => item.label === "QUALIFIER 2"), label: "QUALIFIER 2", team1: "Loser Q1", team2: "Winner Eliminator" },
         { match: matches.find(item => item.label === "FINAL"), label: "FINAL", team1: "Winner Q1", team2: "Winner Q2" }
     ];
