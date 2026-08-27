@@ -65,6 +65,18 @@
             </label>
         </div>
 
+            <div class="score-row">
+                <label>
+                    <span>Team 1 Overs</span>
+                    <input type="number" id="team1-overs" min="0.1" step="0.1" placeholder="20.0">
+                </label>
+
+                <label>
+                    <span>Team 2 Overs</span>
+                    <input type="number" id="team2-overs" min="0.1" step="0.1" placeholder="20.0">
+                </label>
+            </div>
+
         <button type="submit">Save Result</button>
     </form>
 </section>
@@ -75,7 +87,7 @@
     <section class="team-selector">
         <h2>Select Your Team</h2>
 
-        <select  id="team">
+        <select id="team" aria-label="Select your team">
             <option>Kolambe</option>
             <option>Shivanagar</option>
             <option>Matpady</option>
@@ -143,6 +155,7 @@
                     <th>W</th>
                     <th>L</th>
                     <th>PTS</th>
+                    <th>NRR</th>
                 </tr>
             </thead>
 

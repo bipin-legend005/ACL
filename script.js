@@ -9,20 +9,20 @@ const teams = [
 const STORAGE_KEY = "cricketTournamentState";
 
 const defaultMatches = [
-    { id: 1, team1: "Matpady", team2: "Shivanagar", status: "upcoming", date: "28 Aug", time: "6:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 2, team1: "Kolambe", team2: "Devabailu", status: "upcoming", date: "28 Aug", time: "6:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 3, team1: "Chanthar", team2: "Matpady", status: "upcoming", date: "28 Aug", time: "7:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 4, team1: "Shivanagar", team2: "Kolambe", status: "upcoming", date: "28 Aug", time: "7:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 5, team1: "Devabailu", team2: "Chanthar", status: "upcoming", date: "28 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 6, team1: "Kolambe", team2: "Chanthar", status: "upcoming", date: "28 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 7, team1: "Matpady", team2: "Kolambe", status: "upcoming", date: "28 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 8, team1: "Shivanagar", team2: "Devabailu", status: "upcoming", date: "28 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 9, team1: "Chanthar", team2: "Shivanagar", status: "upcoming", date: "28 Aug", time: "10:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 10, team1: "Devabailu", team2: "Matpady", status: "upcoming", date: "28 Aug", time: "10:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 11, team1: "1st", team2: "2nd", status: "upcoming", date: "29 Aug", time: "6:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "QUALIFIER 1" },
-    { id: 12, team1: "3rd", team2: "4th", status: "upcoming", date: "29 Aug", time: "7:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "ELIMINATOR" },
-    { id: 13, team1: "Loser Q1", team2: "Winner Eliminator", status: "upcoming", date: "30 Aug", time: "6:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "QUALIFIER 2" },
-    { id: 14, team1: "Winner Q1", team2: "Winner Q2", status: "upcoming", date: "30 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "FINAL" }
+    { id: 1, team1: "Matpady", team2: "Shivanagar", status: "upcoming", date: "28 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 2, team1: "Kolambe", team2: "Devabailu", status: "upcoming", date: "28 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 3, team1: "Chanthar", team2: "Matpady", status: "upcoming", date: "28 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 4, team1: "Shivanagar", team2: "Kolambe", status: "upcoming", date: "28 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 5, team1: "Devabailu", team2: "Chanthar", status: "upcoming", date: "28 Aug", time: "10:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 6, team1: "Kolambe", team2: "Chanthar", status: "upcoming", date: "29 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 7, team1: "Matpady", team2: "Kolambe", status: "upcoming", date: "29 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 8, team1: "Shivanagar", team2: "Devabailu", status: "upcoming", date: "29 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 9, team1: "Chanthar", team2: "Shivanagar", status: "upcoming", date: "29 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 10, team1: "Devabailu", team2: "Matpady", status: "upcoming", date: "29 Aug", time: "10:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 11, team1: "1st", team2: "2nd", status: "upcoming", date: "29 Aug", time: "10:30 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "QUALIFIER 1" },
+    { id: 12, team1: "3rd", team2: "4th", status: "upcoming", date: "29 Aug", time: "11:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "ELIMINATOR" },
+    { id: 13, team1: "Loser Q1", team2: "Winner Eliminator", status: "upcoming", date: "30 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "QUALIFIER 2" },
+    { id: 14, team1: "Winner Q1", team2: "Winner Q2", status: "upcoming", date: "30 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "FINAL" }
 ];
 
 const adminCredentials = {
@@ -35,6 +35,8 @@ const teamName = document.getElementById("team-name");
 const resultMatchSelect = document.getElementById("result-match");
 const team1ScoreInput = document.getElementById("team1-score");
 const team2ScoreInput = document.getElementById("team2-score");
+const team1OversInput = document.getElementById("team1-overs");
+const team2OversInput = document.getElementById("team2-overs");
 const openSiteBtn = document.getElementById("open-site-btn");
 const adminToggleBtn = document.getElementById("admin-toggle-btn");
 const adminLoginBox = document.getElementById("admin-login-box");
@@ -54,8 +56,11 @@ function normalizeMatch(match, fallback) {
     if (!match || typeof match !== "object") return fallback;
 
     const normalized = { ...fallback, ...match };
-    normalized.location = match.location || fallback.location || "Online";
-    normalized.time = match.time || fallback.time || "6:00 PM";
+    normalized.date = fallback.date;
+    normalized.time = fallback.time || "8:00 PM";
+    normalized.location = fallback.location || "Online";
+    normalized.overs1 = match.overs1 || "";
+    normalized.overs2 = match.overs2 || "";
     return normalized;
 }
 
@@ -96,7 +101,12 @@ function calculateStandings() {
         played: 0,
         wins: 0,
         losses: 0,
-        points: 0
+        points: 0,
+        runsFor: 0,
+        runsAgainst: 0,
+        ballsFaced: 0,
+        ballsBowled: 0,
+        nrr: 0
     }));
 
     matches
@@ -110,6 +120,20 @@ function calculateStandings() {
             team1.played += 1;
             team2.played += 1;
 
+            const overs1 = parseOvers(match.overs1);
+            const overs2 = parseOvers(match.overs2);
+
+            if (overs1 !== null && overs2 !== null) {
+                team1.runsFor += Number(match.score1);
+                team1.runsAgainst += Number(match.score2);
+                team1.ballsFaced += overs1;
+                team1.ballsBowled += overs2;
+                team2.runsFor += Number(match.score2);
+                team2.runsAgainst += Number(match.score1);
+                team2.ballsFaced += overs2;
+                team2.ballsBowled += overs1;
+            }
+
             if (match.winner === match.team1) {
                 team1.wins += 1;
                 team1.points += 2;
@@ -121,7 +145,26 @@ function calculateStandings() {
             }
         });
 
-    return standings.sort((a, b) => b.points - a.points || b.wins - a.wins || a.team.localeCompare(b.team));
+    standings.forEach(team => {
+        team.nrr = team.ballsFaced && team.ballsBowled
+            ? (team.runsFor / (team.ballsFaced / 6)) - (team.runsAgainst / (team.ballsBowled / 6))
+            : 0;
+    });
+
+    return standings.sort((a, b) => b.points - a.points || b.nrr - a.nrr || b.wins - a.wins || a.team.localeCompare(b.team));
+}
+
+function parseOvers(overs) {
+    if (overs === "" || overs === null || overs === undefined) return null;
+
+    const value = Number(overs);
+    if (!Number.isFinite(value) || value <= 0) return null;
+
+    const wholeOvers = Math.floor(value);
+    const balls = Math.round((value - wholeOvers) * 10);
+    if (balls > 5) return null;
+
+    return wholeOvers * 6 + balls;
 }
 
 function renderPointsTable() {
@@ -135,23 +178,32 @@ function renderPointsTable() {
             <td>${team.wins}</td>
             <td>${team.losses}</td>
             <td>${team.points}</td>
+            <td>${team.nrr.toFixed(2)}</td>
         </tr>
     `).join("");
 }
 
 function renderSchedule() {
     const selectedTeam = teamSelector.value;
-    const teamLeagueMatches = matches.filter(match => !match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
-    const teamPlayoffMatches = matches.filter(match => match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
+    const isAdminView = adminPanel && !adminPanel.classList.contains("hidden");
 
-    scheduleList.innerHTML = teamLeagueMatches.length
-        ? teamLeagueMatches.map(match => {
+    const leagueMatches = isAdminView
+        ? matches.filter(match => !match.isPlayoff)
+        : matches.filter(match => !match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
+
+    const playoffMatches = isAdminView
+        ? matches.filter(match => match.isPlayoff)
+        : matches.filter(match => match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
+
+    scheduleList.innerHTML = leagueMatches.length
+        ? leagueMatches.map(match => {
+            const isSelectedTeam = match.team1 === selectedTeam || match.team2 === selectedTeam;
             const resultText = match.status === "completed"
                 ? `<small>${match.team1} ${match.score1} - ${match.score2} ${match.team2}</small>`
-                : `<small>${match.date} • ${match.time || "6:00 PM"} • ${match.location || "Online"}</small>`;
+                : `<small>${match.date} • ${match.time || "8:00 PM"} • ${match.location || "Online"}</small>`;
 
             return `
-                <div class="game highlighted">
+                <div class="game ${isSelectedTeam ? "highlighted" : ""}">
                     <b>Match ${match.id}</b>
                     <span>${match.team1} vs ${match.team2}</span>
                     ${resultText}
@@ -160,8 +212,8 @@ function renderSchedule() {
         }).join("")
         : `<div class="game"><b>No Matches</b><span>${selectedTeam}</span><small>No league matches scheduled for this team yet.</small></div>`;
 
-    playoffList.innerHTML = teamPlayoffMatches.length
-        ? teamPlayoffMatches.map(match => `
+    playoffList.innerHTML = playoffMatches.length
+        ? playoffMatches.map(match => `
             <div class="playoff ${match.label === "FINAL" ? "final" : ""}">
                 <h3>${match.label}</h3>
                 <p>${match.team1} vs ${match.team2}</p>
@@ -238,6 +290,8 @@ function fillScoresForSelectedMatch() {
 
     team1ScoreInput.value = selectedMatch.score1 || "";
     team2ScoreInput.value = selectedMatch.score2 || "";
+    team1OversInput.value = selectedMatch.overs1 || "";
+    team2OversInput.value = selectedMatch.overs2 || "";
 }
 
 function renderAll() {
@@ -259,6 +313,7 @@ openSiteBtn.addEventListener("click", function () {
     adminPanel.classList.add("hidden");
     adminLoginBox.classList.add("hidden");
     adminToggleBtn.classList.add("hidden");
+    document.querySelector(".team-selector").classList.remove("hidden");
 });
 
 adminToggleBtn.addEventListener("click", function () {
@@ -277,6 +332,8 @@ adminLoginForm.addEventListener("submit", function (event) {
         adminPanel.classList.remove("hidden");
         adminLoginBox.classList.add("hidden");
         adminLoginForm.reset();
+        document.querySelector(".team-selector").classList.add("hidden");
+        renderAll();
     } else {
         alert("Invalid admin username or password.");
     }
@@ -289,6 +346,8 @@ document.getElementById("logout-btn").addEventListener("click", function () {
     adminLoginBox.classList.add("hidden");
     adminToggleBtn.classList.remove("hidden");
     adminLoginForm.reset();
+    document.querySelector(".team-selector").classList.remove("hidden");
+    renderAll();
     openSiteBtn.focus();
 });
 
@@ -299,19 +358,23 @@ resultForm.addEventListener("submit", function (event) {
     const selectedMatch = matches.find(match => match.id === matchId);
     const score1 = Number(team1ScoreInput.value);
     const score2 = Number(team2ScoreInput.value);
+    const overs1 = team1OversInput.value;
+    const overs2 = team2OversInput.value;
 
     if (!selectedMatch) {
         alert("Choose a valid match.");
         return;
     }
 
-    if (Number.isNaN(score1) || Number.isNaN(score2) || score1 === score2) {
-        alert("Please enter valid scores and make sure one team wins.");
+    if (Number.isNaN(score1) || Number.isNaN(score2) || score1 < 0 || score2 < 0 || score1 === score2 || parseOvers(overs1) === null || parseOvers(overs2) === null) {
+        alert("Enter valid scores, overs in cricket format (for example 19.4), and make sure one team wins.");
         return;
     }
 
     selectedMatch.score1 = score1;
     selectedMatch.score2 = score2;
+    selectedMatch.overs1 = overs1;
+    selectedMatch.overs2 = overs2;
     selectedMatch.status = "completed";
     selectedMatch.winner = score1 > score2 ? selectedMatch.team1 : selectedMatch.team2;
 
