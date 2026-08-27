@@ -41,6 +41,7 @@ const adminCredentials = {
 const teamSelector = document.getElementById("team");
 const teamName = document.getElementById("team-name");
 const resultMatchSelect = document.getElementById("result-match");
+const resultOutcomeSelect = document.getElementById("result-outcome");
 const team1ScoreInput = document.getElementById("team1-score");
 const team2ScoreInput = document.getElementById("team2-score");
 const team1OversInput = document.getElementById("team1-overs");
@@ -127,7 +128,7 @@ function calculateStandings() {
     }));
 
     matches
-        .filter(match => !match.isPlayoff && match.status === "completed" && match.winner)
+        .filter(match => !match.isPlayoff && match.status === "completed")
         .forEach(match => {
             const team1 = standings.find(item => item.team === match.team1);
             const team2 = standings.find(item => item.team === match.team2);
@@ -159,6 +160,9 @@ function calculateStandings() {
                 team2.wins += 1;
                 team2.points += 2;
                 team1.losses += 1;
+            } else {
+                team1.points += 1;
+                team2.points += 1;
             }
         });
 
@@ -168,7 +172,13 @@ function calculateStandings() {
             : 0;
     });
 
-    return standings.sort((a, b) => b.points - a.points || b.nrr - a.nrr || b.wins - a.wins || a.team.localeCompare(b.team));
+    return standings
+        .sort((a, b) => b.points - a.points || b.nrr - a.nrr || b.runsFor - a.runsFor || a.team.localeCompare(b.team))
+        .map((team, index) => ({
+            ...team,
+            position: index + 1,
+            qualification: index < 4 ? `Q${index + 1}` : "ELIMINATED"
+        }));
 }
 
 function parseOvers(overs) {
@@ -196,8 +206,21 @@ function renderPointsTable() {
             <td>${team.losses}</td>
             <td>${team.points}</td>
             <td>${team.nrr.toFixed(2)}</td>
+            <td><strong class="qualification ${team.qualification === "ELIMINATED" ? "eliminated" : ""}">${team.qualification}</strong></td>
         </tr>
     `).join("");
+}
+
+function getPlayoffBracket() {
+    const standings = calculateStandings();
+    const teamAt = position => standings[position - 1]?.team || `Q${position}`;
+
+    return [
+        { match: matches.find(item => item.label === "QUALIFIER 1"), label: "QUALIFIER 1", team1: teamAt(1), team2: teamAt(2) },
+        { match: matches.find(item => item.label === "ELIMINATOR"), label: "ELIMINATOR", team1: teamAt(3), team2: teamAt(4) },
+        { match: matches.find(item => item.label === "QUALIFIER 2"), label: "QUALIFIER 2", team1: "Loser Q1", team2: "Winner Eliminator" },
+        { match: matches.find(item => item.label === "FINAL"), label: "FINAL", team1: "Winner Q1", team2: "Winner Q2" }
+    ];
 }
 
 function renderSchedule() {
@@ -208,15 +231,16 @@ function renderSchedule() {
         ? matches.filter(match => !match.isPlayoff)
         : matches.filter(match => !match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
 
-    const playoffMatches = isAdminView
-        ? matches.filter(match => match.isPlayoff)
-        : matches.filter(match => match.isPlayoff && (match.team1 === selectedTeam || match.team2 === selectedTeam));
+    const playoffMatches = getPlayoffBracket().filter(item => {
+        if (isAdminView) return true;
+        return item.team1 === selectedTeam || item.team2 === selectedTeam;
+    });
 
     scheduleList.innerHTML = leagueMatches.length
         ? leagueMatches.map(match => {
             const isSelectedTeam = match.team1 === selectedTeam || match.team2 === selectedTeam;
             const resultText = match.status === "completed"
-                ? `<small>${match.team1} ${match.score1} - ${match.score2} ${match.team2}</small>`
+                ? `<small>${match.winner ? `${match.team1} ${match.score1} - ${match.score2} ${match.team2}` : "Tie / No Result"}</small>`
                 : `<small>${match.date} • ${match.time || "8:00 PM"} • ${match.location || "Online"}</small>`;
 
             return `
@@ -230,12 +254,12 @@ function renderSchedule() {
         : `<div class="game"><b>No Matches</b><span>${selectedTeam}</span><small>No league matches scheduled for this team yet.</small></div>`;
 
     playoffList.innerHTML = playoffMatches.length
-        ? playoffMatches.map(match => `
-            <div class="playoff ${match.label === "FINAL" ? "final" : ""}" style="--team-color: ${getTeamColor(match.team1)}; --team-color-alt: ${getTeamColor(match.team2)}">
-                <h3>${match.label}</h3>
-                <p><strong style="color: ${getTeamColor(match.team1)}">${match.team1}</strong> <em>vs</em> <strong style="color: ${getTeamColor(match.team2)}">${match.team2}</strong></p>
-                <small>${match.date}</small>
-                ${match.status === "completed" ? `<small>Result: ${match.winner} won</small>` : `<small>Winner → ${match.label === "QUALIFIER 1" ? "Final" : match.label === "ELIMINATOR" ? "Qualifier 2" : "Final"}</small>`}
+        ? playoffMatches.map(item => `
+            <div class="playoff ${item.label === "FINAL" ? "final" : ""}" style="--team-color: ${getTeamColor(item.team1)}; --team-color-alt: ${getTeamColor(item.team2)}">
+                <h3>${item.label}</h3>
+                <p><strong style="color: ${getTeamColor(item.team1)}">${item.team1}</strong> <em>vs</em> <strong style="color: ${getTeamColor(item.team2)}">${item.team2}</strong></p>
+                <small>${item.match.date}</small>
+                ${item.match.status === "completed" ? `<small>Result: ${item.match.winner || "Tie / No Result"}</small>` : `<small>Winner → ${item.label === "QUALIFIER 1" ? "Final" : item.label === "ELIMINATOR" ? "Qualifier 2" : "Final"}</small>`}
             </div>
         `).join("")
         : `<div class="playoff"><h3>No Playoff Match</h3><p>${selectedTeam}</p><small>No playoff match is assigned to this team yet.</small></div>`;
@@ -247,6 +271,8 @@ function updateDashboard(team) {
 
     const standings = calculateStandings();
     const teamStats = standings.find(item => item.team === team) || { played: 0, wins: 0, losses: 0, points: 0 };
+    document.getElementById("qualification-status").textContent = teamStats.qualification || "ELIMINATED";
+    document.getElementById("qualification-status").classList.toggle("eliminated", teamStats.qualification === "ELIMINATED");
     const statBoxes = document.querySelectorAll(".stats div");
 
     statBoxes[0].querySelector("strong").textContent = teamStats.played;
@@ -307,9 +333,13 @@ function setPlayerView(isAdminView) {
 }
 
 function populateMatchSelect() {
-    resultMatchSelect.innerHTML = matches.map(match => `
-        <option value="${match.id}">${match.isPlayoff ? match.label : `Match ${match.id}`} - ${match.team1} vs ${match.team2}</option>
-    `).join("");
+    const bracket = getPlayoffBracket();
+    resultMatchSelect.innerHTML = matches.map(match => {
+        const playoff = bracket.find(item => item.match?.id === match.id);
+        const team1 = playoff?.team1 || match.team1;
+        const team2 = playoff?.team2 || match.team2;
+        return `<option value="${match.id}">${match.isPlayoff ? match.label : `Match ${match.id}`} - ${team1} vs ${team2}</option>`;
+    }).join("");
 }
 
 function fillScoresForSelectedMatch() {
@@ -321,6 +351,7 @@ function fillScoresForSelectedMatch() {
     team2ScoreInput.value = selectedMatch.score2 || "";
     team1OversInput.value = selectedMatch.overs1 || "";
     team2OversInput.value = selectedMatch.overs2 || "";
+    resultOutcomeSelect.value = selectedMatch.winner ? "win" : "tie";
 }
 
 function renderAll() {
@@ -389,23 +420,31 @@ resultForm.addEventListener("submit", function (event) {
     const score2 = Number(team2ScoreInput.value);
     const overs1 = team1OversInput.value;
     const overs2 = team2OversInput.value;
+    const outcome = resultOutcomeSelect.value;
+    const hasScores = team1ScoreInput.value !== "" && team2ScoreInput.value !== "";
+    const isNoResult = outcome === "tie" && !hasScores;
+    const validOvers = parseOvers(overs1) !== null && parseOvers(overs2) !== null;
 
     if (!selectedMatch) {
         alert("Choose a valid match.");
         return;
     }
 
-    if (Number.isNaN(score1) || Number.isNaN(score2) || score1 < 0 || score2 < 0 || score1 === score2 || parseOvers(overs1) === null || parseOvers(overs2) === null) {
-        alert("Enter valid scores, overs in cricket format (for example 19.4), and make sure one team wins.");
+    const validScores = hasScores && !Number.isNaN(score1) && !Number.isNaN(score2) && score1 >= 0 && score2 >= 0;
+    const validWin = outcome === "win" && validScores && score1 !== score2 && validOvers;
+    const validTie = outcome === "tie" && (isNoResult || (validScores && score1 === score2 && validOvers));
+
+    if (!validWin && !validTie) {
+        alert("Enter valid scores and overs, or choose Tie / No Result for a tied or abandoned match.");
         return;
     }
 
-    selectedMatch.score1 = score1;
-    selectedMatch.score2 = score2;
-    selectedMatch.overs1 = overs1;
-    selectedMatch.overs2 = overs2;
+    selectedMatch.score1 = isNoResult ? "" : score1;
+    selectedMatch.score2 = isNoResult ? "" : score2;
+    selectedMatch.overs1 = isNoResult ? "" : overs1;
+    selectedMatch.overs2 = isNoResult ? "" : overs2;
     selectedMatch.status = "completed";
-    selectedMatch.winner = score1 > score2 ? selectedMatch.team1 : selectedMatch.team2;
+    selectedMatch.winner = outcome === "win" ? (score1 > score2 ? selectedMatch.team1 : selectedMatch.team2) : "";
 
     saveMatches();
     renderAll();

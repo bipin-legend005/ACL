@@ -311,6 +311,28 @@ select {
     font-size: 0.75rem;
 }
 
+#qualification-status {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 5px 10px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--green);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+#qualification-status.eliminated,
+.qualification.eliminated {
+    color: #ff5470;
+}
+
+.qualification {
+    color: var(--green);
+    letter-spacing: 0.06em;
+}
+
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
