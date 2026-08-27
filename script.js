@@ -66,6 +66,15 @@ const scheduleList = document.getElementById("schedule-list");
 const playoffList = document.getElementById("playoff-list");
 const pointsTableBody = document.getElementById("points-table-body");
 const matchCard = document.getElementById("match-card");
+const mapTeamPicker = document.getElementById("map-team-picker");
+const mapMatches = document.getElementById("map-matches");
+const mapPlayoffs = document.getElementById("map-playoffs");
+const mapState = document.getElementById("map-state");
+const championNode = document.getElementById("champion-node");
+const dnaTeamSelect = document.getElementById("dna-team");
+const dnaCompareSelect = document.getElementById("dna-compare-team");
+const dnaGrid = document.getElementById("dna-grid");
+const dnaComparison = document.getElementById("dna-comparison");
 const newsList = document.getElementById("news-list");
 const newsForm = document.getElementById("news-form");
 const newsIdInput = document.getElementById("news-id");
@@ -160,6 +169,116 @@ function getTeamMatches(team) {
 
 function getTeamColor(team) {
     return teamColors[team] || "#7af6ff";
+}
+
+function isLeagueComplete() {
+    const leagueMatches = matches.filter(match => !match.isPlayoff);
+    return leagueMatches.length > 0 && leagueMatches.every(match => match.status === "completed");
+}
+
+function matchState(match) {
+    if (match.status !== "completed") return { label: "UPCOMING", icon: "⏳", className: "upcoming" };
+    if (match.resultType === "network" || !match.winner) return { label: "NO RESULT", icon: "📶", className: "no-result" };
+    if (match.resultType?.includes("noshow")) return { label: "FORFEIT", icon: "🚫", className: "forfeit" };
+    if (match.resultType?.includes("quit")) return { label: "FORFEIT — QUIT", icon: "🏳️", className: "quit" };
+    return { label: "COMPLETED", icon: "✅", className: "completed" };
+}
+
+function renderTournamentMap() {
+    const selectedTeam = teamSelector.value;
+    const leagueMatches = matches.filter(match => !match.isPlayoff).sort((a, b) => a.id - b.id);
+    const bracket = getPlayoffBracket();
+    const complete = isLeagueComplete();
+
+    mapTeamPicker.innerHTML = teams.map(team => `
+        <button type="button" class="map-team-button ${team === selectedTeam ? "selected" : ""}" data-map-team="${team}" style="--team-color: ${getTeamColor(team)}">${team}</button>
+    `).join("");
+
+    mapMatches.innerHTML = leagueMatches.map(match => {
+        const state = matchState(match);
+        const belongsToTeam = match.team1 === selectedTeam || match.team2 === selectedTeam;
+        const result = state.className === "completed" ? `Winner: ${match.winner}` : state.label;
+        return `<article class="map-match ${state.className} ${belongsToTeam ? "team-path" : ""}" style="--team-color: ${getTeamColor(match.team1)}; --team-color-alt: ${getTeamColor(match.team2)}"><span>Match ${match.id}</span><strong>${match.team1} <em>vs</em> ${match.team2}</strong><small>${state.icon} ${result}</small></article>`;
+    }).join("");
+
+    mapPlayoffs.innerHTML = bracket.map(item => {
+        const state = item.match.status === "completed" ? matchState(item.match) : { label: complete ? "UPCOMING" : "PENDING", icon: complete ? "⏳" : "🔒", className: complete ? "upcoming" : "pending" };
+        const belongsToTeam = item.team1 === selectedTeam || item.team2 === selectedTeam;
+        return `<article class="map-playoff ${state.className} ${belongsToTeam ? "team-path" : ""}"><span>${item.label}</span><strong>${complete ? `${item.team1} vs ${item.team2}` : `${item.label.replace("QUALIFIER ", "Q")} — PENDING`}</strong><small>${state.icon} ${state.label}</small></article>`;
+    }).join("");
+
+    mapState.textContent = complete ? "PLAYOFF BRACKET LOCKED" : "LEAGUE STAGE";
+    const finalMatch = matches.find(match => match.label === "FINAL");
+    if (finalMatch?.status === "completed" && finalMatch.winner) {
+        championNode.classList.add("crowned");
+        championNode.innerHTML = `<strong>🏆 CPL 2026 CHAMPION</strong><small>${finalMatch.winner}</small>`;
+    } else {
+        championNode.classList.remove("crowned");
+        championNode.innerHTML = `<strong>🏆 CHAMPION</strong><small>Final pending</small>`;
+    }
+}
+
+function getDnaMetrics(team) {
+    const league = matches.filter(match => !match.isPlayoff && match.status === "completed" && (match.team1 === team || match.team2 === team));
+    const scored = league.filter(match => parseOvers(match.overs1) !== null && parseOvers(match.overs2) !== null && match.score1 !== "" && match.score2 !== "");
+    const wins = league.filter(match => match.winner === team).length;
+    const results = league.map(match => match.winner === team ? 1 : !match.winner ? 0.5 : 0);
+    const form = results.length ? Math.round(results.slice(-4).reduce((sum, value) => sum + value, 0) / results.length * 100) : null;
+    const runs = scored.reduce((sum, match) => sum + Number(match.team1 === team ? match.score1 : match.score2), 0);
+    const opponentsRuns = scored.reduce((sum, match) => sum + Number(match.team1 === team ? match.score2 : match.score1), 0);
+    const averageRuns = scored.length ? runs / scored.length : null;
+    const runRateAgainst = scored.length ? opponentsRuns / scored.reduce((sum, match) => sum + parseOvers(match.team1 === team ? match.overs2 : match.overs1), 0) * 6 : null;
+    const profiles = teams.map(candidate => {
+        const candidateMatches = matches.filter(match => !match.isPlayoff && match.status === "completed" && (match.team1 === candidate || match.team2 === candidate));
+        const candidateScored = candidateMatches.filter(match => parseOvers(match.overs1) !== null && parseOvers(match.overs2) !== null && match.score1 !== "" && match.score2 !== "");
+        const candidateRuns = candidateScored.reduce((sum, match) => sum + Number(match.team1 === candidate ? match.score1 : match.score2), 0);
+        const candidateAgainst = candidateScored.reduce((sum, match) => sum + Number(match.team1 === candidate ? match.score2 : match.score1), 0);
+        const candidateBalls = candidateScored.reduce((sum, match) => sum + parseOvers(match.team1 === candidate ? match.overs2 : match.overs1), 0);
+        return { averageRuns: candidateScored.length ? candidateRuns / candidateScored.length : null, runRateAgainst: candidateBalls ? candidateAgainst / (candidateBalls / 6) : null };
+    });
+    const maxAverageRuns = Math.max(...profiles.map(profile => profile.averageRuns || 0));
+    const bestRunRate = Math.min(...profiles.filter(profile => profile.runRateAgainst !== null).map(profile => profile.runRateAgainst), Infinity);
+    const batting = averageRuns !== null && maxAverageRuns ? Math.round(averageRuns / maxAverageRuns * 100) : null;
+    const bowling = runRateAgainst !== null && bestRunRate !== Infinity ? Math.max(0, Math.round(bestRunRate / runRateAgainst * 100)) : null;
+    const consistency = results.length ? Math.round(results.reduce((sum, value) => sum + (value >= 0.5 ? 1 : 0), 0) / results.length * 100) : null;
+    const playoffMatches = matches.filter(match => match.isPlayoff && match.status === "completed" && (match.team1 === team || match.team2 === team));
+    const clutch = playoffMatches.length ? Math.round(playoffMatches.filter(match => match.winner === team).length / playoffMatches.length * 100) : null;
+    return { team, batting, bowling, consistency, winRate: league.length ? Math.round(wins / league.length * 100) : null, form, clutch };
+}
+
+function dnaValue(value) {
+    return value === null ? "Not enough data" : `${value}%`;
+}
+
+function dnaDescription(metrics) {
+    if (!metrics.form) return "🆕 Not enough completed results for a performance read.";
+    if (metrics.form >= 75 && metrics.winRate >= 75) return "🔥 Strong overall team with excellent recent form.";
+    if (metrics.bowling !== null && metrics.bowling > (metrics.batting || 0) + 10) return "⚔️ Strong bowling profile with room to sharpen results.";
+    if (metrics.form >= 75) return "📈 Improving rapidly after a strong run of results.";
+    return "⚠️ Results are inconsistent and playoff pressure is increasing.";
+}
+
+function renderDnaCard(metrics) {
+    const rows = [["Batting", metrics.batting], ["Bowling", metrics.bowling], ["Consistency", metrics.consistency], ["Win Rate", metrics.winRate], ["Current Form", metrics.form], ["Clutch", metrics.clutch]];
+    return `<article class="dna-card" style="--team-color: ${getTeamColor(metrics.team)}"><h3>🧬 ${metrics.team}</h3>${rows.map(([label, value]) => `<div class="dna-meter"><span>${label}</span><b>${dnaValue(value)}</b><i style="width: ${value ?? 0}%"></i></div>`).join("")}<p>${dnaDescription(metrics)}</p></article>`;
+}
+
+function renderTournamentDna() {
+    const selected = dnaTeamSelect.value || teamSelector.value;
+    const compare = dnaCompareSelect.value;
+    dnaTeamSelect.innerHTML = teams.map(team => `<option value="${team}" ${team === selected ? "selected" : ""}>${team}</option>`).join("");
+    dnaCompareSelect.innerHTML = teams.filter(team => team !== selected).map(team => `<option value="${team}" ${team === compare ? "selected" : ""}>${team}</option>`).join("");
+    const primaryMetrics = getDnaMetrics(selected);
+    dnaGrid.innerHTML = renderDnaCard(primaryMetrics);
+    if (!compare || compare === selected) {
+        dnaComparison.innerHTML = "";
+        return;
+    }
+    const secondaryMetrics = getDnaMetrics(compare);
+    const metricRows = [["Batting", "batting"], ["Bowling", "bowling"], ["Consistency", "consistency"], ["Win Rate", "winRate"], ["Form", "form"]];
+    const strength = metricRows.map(([label, key]) => ({ label, key, value: primaryMetrics[key] ?? -1 })).sort((a, b) => b.value - a.value)[0];
+    const compareStrength = metricRows.map(([label, key]) => ({ label, key, value: secondaryMetrics[key] ?? -1 })).sort((a, b) => b.value - a.value)[0];
+    dnaComparison.innerHTML = `<h3>DNA COMPARISON</h3><div class="comparison-table"><strong>Metric</strong><strong>${selected}</strong><strong>${compare}</strong>${metricRows.map(([label, key]) => `<span>${label}</span><b>${dnaValue(primaryMetrics[key])}</b><b>${dnaValue(secondaryMetrics[key])}</b>`).join("")}</div><p>🔥 Biggest Strength: ${selected} — ${strength.value >= 0 ? strength.label : "Not enough data"}</p><p>🎯 Biggest Strength: ${compare} — ${compareStrength.value >= 0 ? compareStrength.label : "Not enough data"}</p>`;
 }
 
 function getTeamForm(team) {
@@ -444,12 +563,20 @@ function getPlayoffBracket() {
     const leagueMatches = matches.filter(match => !match.isPlayoff);
     const qualificationConfirmed = leagueMatches.length > 0 && leagueMatches.every(match => match.status === "completed");
     const teamAt = position => standings[position - 1]?.team || `Q${position}`;
+    const qualifier = matches.find(item => item.label === "QUALIFIER 1");
+    const eliminator = matches.find(item => item.label === "ELIMINATOR");
+    const qualifierWinner = qualifier?.winner || "Winner Q1";
+    const qualifierLoser = qualifier?.status === "completed" && qualifierWinner !== "Winner Q1"
+        ? (qualifierWinner === teamAt(1) ? teamAt(2) : teamAt(1))
+        : "Loser Q1";
+    const eliminatorWinner = eliminator?.winner || "Winner Eliminator";
+    const qualifier2 = matches.find(item => item.label === "QUALIFIER 2");
 
     return [
         { match: matches.find(item => item.label === "QUALIFIER 1"), label: "QUALIFIER 1", team1: qualificationConfirmed ? teamAt(1) : "Qualification pending", team2: qualificationConfirmed ? teamAt(2) : "Qualification pending" },
         { match: matches.find(item => item.label === "ELIMINATOR"), label: "ELIMINATOR", team1: qualificationConfirmed ? teamAt(3) : "Qualification pending", team2: qualificationConfirmed ? teamAt(4) : "Qualification pending" },
-        { match: matches.find(item => item.label === "QUALIFIER 2"), label: "QUALIFIER 2", team1: "Loser Q1", team2: "Winner Eliminator" },
-        { match: matches.find(item => item.label === "FINAL"), label: "FINAL", team1: "Winner Q1", team2: "Winner Q2" }
+        { match: qualifier2, label: "QUALIFIER 2", team1: qualifierLoser, team2: eliminatorWinner },
+        { match: matches.find(item => item.label === "FINAL"), label: "FINAL", team1: qualifierWinner, team2: qualifier2?.winner || "Winner Q2" }
     ];
 }
 
@@ -597,12 +724,31 @@ function renderAll() {
     renderNews();
     renderAdminNews();
     renderTeamRepresentations();
+    renderTournamentMap();
+    renderTournamentDna();
 }
 
 teamSelector.addEventListener("change", function () {
+    dnaTeamSelect.value = this.value;
     updateDashboard(this.value);
     renderSchedule();
+    renderTournamentMap();
+    renderTournamentDna();
 });
+
+mapTeamPicker.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-map-team]");
+    if (!button) return;
+    teamSelector.value = button.dataset.mapTeam;
+    dnaTeamSelect.value = button.dataset.mapTeam;
+    updateDashboard(teamSelector.value);
+    renderSchedule();
+    renderTournamentMap();
+    renderTournamentDna();
+});
+
+dnaTeamSelect.addEventListener("change", renderTournamentDna);
+dnaCompareSelect.addEventListener("change", renderTournamentDna);
 
 openSiteBtn.addEventListener("click", function () {
     authContainer.classList.add("hidden");
@@ -662,6 +808,11 @@ resultForm.addEventListener("submit", function (event) {
     const isNoResult = outcome === "tie" && !hasScores;
     const validOvers = parseOvers(overs1) !== null && parseOvers(overs2) !== null;
     const specialResult = ["network", "team1-noshow", "team2-noshow", "team1-quit", "team2-quit"].includes(outcome);
+    const playoffParticipants = selectedMatch?.isPlayoff
+        ? getPlayoffBracket().find(item => item.match?.id === selectedMatch.id)
+        : null;
+    const participant1 = playoffParticipants?.team1 || selectedMatch?.team1;
+    const participant2 = playoffParticipants?.team2 || selectedMatch?.team2;
 
     if (!selectedMatch) {
         alert("Choose a valid match.");
@@ -686,7 +837,9 @@ resultForm.addEventListener("submit", function (event) {
     selectedMatch.overs2 = isNoResult || specialResult ? "" : overs2;
     selectedMatch.status = "completed";
     selectedMatch.resultType = outcome;
-    selectedMatch.winner = outcome === "team1-win" ? selectedMatch.team1 : outcome === "team2-win" ? selectedMatch.team2 : ["team1-noshow", "team1-quit"].includes(outcome) ? selectedMatch.team2 : ["team2-noshow", "team2-quit"].includes(outcome) ? selectedMatch.team1 : "";
+    selectedMatch.team1 = participant1;
+    selectedMatch.team2 = participant2;
+    selectedMatch.winner = outcome === "team1-win" ? participant1 : outcome === "team2-win" ? participant2 : ["team1-noshow", "team1-quit"].includes(outcome) ? participant2 : ["team2-noshow", "team2-quit"].includes(outcome) ? participant1 : "";
 
     saveMatches();
     renderAll();

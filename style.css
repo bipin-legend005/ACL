@@ -821,6 +821,215 @@ td {
     margin-top: 10px;
 }
 
+.map-team-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin: 20px 0;
+}
+
+.map-team-button {
+    padding: 9px 13px;
+    border: 1px solid var(--team-color, var(--cyan));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--team-color, var(--cyan)) 12%, transparent);
+    color: var(--team-color, var(--text));
+    box-shadow: none;
+    font-size: 0.7rem;
+}
+
+.map-team-button.selected,
+.map-team-button:hover {
+    background: var(--team-color, var(--cyan));
+    color: #07101d;
+}
+
+.map-state {
+    color: var(--yellow);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.map-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.map-node {
+    padding: 17px;
+    border: 1px solid rgba(122, 246, 255, 0.28);
+    border-radius: 14px;
+    background: rgba(8, 20, 35, 0.36);
+    text-align: center;
+}
+
+.map-node strong,
+.map-match span,
+.map-playoff span {
+    color: var(--cyan);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.map-node small,
+.map-match small,
+.map-playoff small {
+    display: block;
+    margin-top: 7px;
+    color: var(--muted);
+}
+
+.map-connector {
+    width: 2px;
+    height: 20px;
+    margin: 0 auto;
+    background: linear-gradient(var(--cyan), rgba(122, 246, 255, 0.08));
+}
+
+.map-matches,
+.map-playoffs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.map-match,
+.map-playoff {
+    padding: 14px;
+    border: 1px solid rgba(122, 246, 255, 0.18);
+    border-left: 4px solid var(--team-color, var(--cyan));
+    border-radius: 12px;
+    background: rgba(8, 20, 35, 0.3);
+    opacity: 0.48;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.map-match.team-path,
+.map-playoff.team-path,
+.map-match.completed {
+    opacity: 1;
+}
+
+.map-match.completed {
+    background: rgba(94, 242, 181, 0.08);
+}
+
+.map-match.forfeit,
+.map-match.quit {
+    border-color: rgba(255, 84, 112, 0.55);
+}
+
+.map-match strong,
+.map-playoff strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.champion-node.crowned {
+    border-color: var(--yellow);
+    background: rgba(247, 211, 90, 0.14);
+    box-shadow: 0 0 30px rgba(247, 211, 90, 0.2);
+}
+
+.dna-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.dna-controls label {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.dna-controls select {
+    margin-top: 7px;
+}
+
+.dna-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.dna-card {
+    padding: 20px;
+    border: 1px solid var(--team-color, var(--cyan));
+    border-radius: 14px;
+    background: rgba(8, 20, 35, 0.34);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--team-color, var(--cyan)) 14%, transparent);
+}
+
+.dna-card h3 {
+    color: var(--team-color, var(--cyan));
+    letter-spacing: 0.08em;
+}
+
+.dna-meter {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-top: 16px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid rgba(122, 246, 255, 0.1);
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.dna-meter b {
+    color: var(--text);
+}
+
+.dna-meter i {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--team-color, var(--cyan));
+    transform-origin: left;
+}
+
+.dna-card p,
+.dna-comparison p {
+    margin-top: 18px;
+    color: var(--yellow);
+    line-height: 1.5;
+}
+
+.dna-comparison {
+    margin-top: 16px;
+    padding: 18px;
+    border-top: 1px solid rgba(122, 246, 255, 0.18);
+}
+
+.dna-comparison h3 {
+    color: var(--cyan);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+}
+
+.comparison-table {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.comparison-table strong,
+.comparison-table b {
+    color: var(--text);
+}
+
 footer {
     text-align: center;
     padding: 26px 18px 36px;
@@ -874,6 +1083,12 @@ footer {
 
     .representation-row {
         display: flex;
+    }
+
+    .map-matches,
+    .map-playoffs,
+    .dna-controls {
+        grid-template-columns: 1fr;
     }
 
     table {

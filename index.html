@@ -21,6 +21,8 @@
     <a href="#points">Points Table</a>
     <a href="#playoffs">Playoffs</a>
     <a href="#rules">Rules</a>
+    <a href="#tournament-map">🗺️ Map</a>
+    <a href="#tournament-dna">🧬 DNA</a>
 </nav>
 
 <section class="auth-container" id="auth-container">
@@ -237,6 +239,45 @@
         <h2>🏆 PLAYOFFS</h2>
 
         <div class="playoffs" id="playoff-list"></div>
+    </section>
+
+    <section class="feature-section tournament-map-section" id="tournament-map">
+        <div class="section-title-row">
+            <div>
+                <p class="eyebrow">CPL 2026 JOURNEY</p>
+                <h2>🗺️ TOURNAMENT MAP</h2>
+            </div>
+            <span class="map-state" id="map-state">LEAGUE STAGE</span>
+        </div>
+        <div class="map-team-picker" id="map-team-picker"></div>
+        <div class="map-flow">
+            <div class="map-node map-start"><strong>START</strong><small>CPL 2026</small></div>
+            <div class="map-connector"></div>
+            <div class="map-node"><strong>🏏 LEAGUE STAGE</strong><small>10 Matches</small></div>
+            <div class="map-connector"></div>
+            <div class="map-matches" id="map-matches"></div>
+            <div class="map-connector"></div>
+            <div class="map-node"><strong>🏆 PLAYOFFS</strong><small>Top 4 journey</small></div>
+            <div class="map-connector"></div>
+            <div class="map-playoffs" id="map-playoffs"></div>
+            <div class="map-connector"></div>
+            <div class="map-node champion-node" id="champion-node"><strong>🏆 CHAMPION</strong><small>League in progress</small></div>
+        </div>
+    </section>
+
+    <section class="feature-section dna-section" id="tournament-dna">
+        <div class="section-title-row">
+            <div>
+                <p class="eyebrow">PERFORMANCE PROFILE</p>
+                <h2>🧬 TOURNAMENT DNA</h2>
+            </div>
+        </div>
+        <div class="dna-controls">
+            <label>Team DNA <select id="dna-team" aria-label="Select team DNA"></select></label>
+            <label>Compare with <select id="dna-compare-team" aria-label="Compare DNA with another team"></select></label>
+        </div>
+        <div class="dna-grid" id="dna-grid"></div>
+        <div class="dna-comparison" id="dna-comparison"></div>
     </section>
 
     <section class="feature-section rules-section" id="rules">
