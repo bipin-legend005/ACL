@@ -57,6 +57,11 @@ const scheduleList = document.getElementById("schedule-list");
 const playoffList = document.getElementById("playoff-list");
 const pointsTableBody = document.getElementById("points-table-body");
 const matchCard = document.getElementById("match-card");
+const playerOnlySections = [
+    document.getElementById("team-selector-section"),
+    document.getElementById("team-dashboard-section"),
+    document.getElementById("next-match-section")
+];
 
 let matches = loadMatches();
 
@@ -282,12 +287,23 @@ function updateNextMatch(team) {
 
 function highlightTeamMatches(team) {
     const games = document.querySelectorAll(".game");
+    const isAdminView = adminPanel && !adminPanel.classList.contains("hidden");
 
     games.forEach(game => {
+        if (isAdminView) {
+            game.style.border = "";
+            game.style.opacity = "1";
+            return;
+        }
+
         const isTeamMatch = game.textContent.includes(team);
         game.style.border = isTeamMatch ? `2px solid ${getTeamColor(team)}` : "none";
         game.style.opacity = isTeamMatch ? "1" : "0.45";
     });
+}
+
+function setPlayerView(isAdminView) {
+    playerOnlySections.forEach(section => section.classList.toggle("hidden", isAdminView));
 }
 
 function populateMatchSelect() {
@@ -326,7 +342,7 @@ openSiteBtn.addEventListener("click", function () {
     adminPanel.classList.add("hidden");
     adminLoginBox.classList.add("hidden");
     adminToggleBtn.classList.add("hidden");
-    document.querySelector(".team-selector").classList.remove("hidden");
+    setPlayerView(false);
 });
 
 adminToggleBtn.addEventListener("click", function () {
@@ -345,7 +361,7 @@ adminLoginForm.addEventListener("submit", function (event) {
         adminPanel.classList.remove("hidden");
         adminLoginBox.classList.add("hidden");
         adminLoginForm.reset();
-        document.querySelector(".team-selector").classList.add("hidden");
+        setPlayerView(true);
         renderAll();
     } else {
         alert("Invalid admin username or password.");
@@ -359,7 +375,7 @@ document.getElementById("logout-btn").addEventListener("click", function () {
     adminLoginBox.classList.add("hidden");
     adminToggleBtn.classList.remove("hidden");
     adminLoginForm.reset();
-    document.querySelector(".team-selector").classList.remove("hidden");
+    setPlayerView(false);
     renderAll();
     openSiteBtn.focus();
 });
