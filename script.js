@@ -1,6 +1,6 @@
 const teams = [
     "Kolambe",
-    "Shivanagar",
+    "Shivajinagar",
     "Matpady",
     "Chanthar",
     "Devabailu"
@@ -8,7 +8,7 @@ const teams = [
 
 const teamColors = {
     Kolambe: "#00f5d4",
-    Shivanagar: "#ff4ecd",
+    Shivajinagar: "#ff4ecd",
     Matpady: "#b8ff3d",
     Chanthar: "#ff9f1c",
     Devabailu: "#9b5cff"
@@ -19,15 +19,15 @@ const PREDICTIONS_KEY = "cplPredictions";
 const NEWS_KEY = "cplOrganizerNews";
 
 const defaultMatches = [
-    { id: 1, team1: "Matpady", team2: "Shivanagar", status: "upcoming", date: "28 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 1, team1: "Matpady", team2: "Shivajinagar", status: "upcoming", date: "28 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 2, team1: "Kolambe", team2: "Devabailu", status: "upcoming", date: "28 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 3, team1: "Chanthar", team2: "Matpady", status: "upcoming", date: "28 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 4, team1: "Shivanagar", team2: "Kolambe", status: "upcoming", date: "28 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 4, team1: "Shivajinagar", team2: "Kolambe", status: "upcoming", date: "28 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 5, team1: "Devabailu", team2: "Chanthar", status: "upcoming", date: "28 Aug", time: "10:00 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 6, team1: "Kolambe", team2: "Chanthar", status: "upcoming", date: "29 Aug", time: "8:00 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 7, team1: "Matpady", team2: "Kolambe", status: "upcoming", date: "29 Aug", time: "8:30 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 8, team1: "Shivanagar", team2: "Devabailu", status: "upcoming", date: "29 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
-    { id: 9, team1: "Chanthar", team2: "Shivanagar", status: "upcoming", date: "29 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 8, team1: "Shivajinagar", team2: "Devabailu", status: "upcoming", date: "29 Aug", time: "9:00 PM", location: "Online", score1: "", score2: "", winner: "" },
+    { id: 9, team1: "Chanthar", team2: "Shivajinagar", status: "upcoming", date: "29 Aug", time: "9:30 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 10, team1: "Devabailu", team2: "Matpady", status: "upcoming", date: "29 Aug", time: "10:00 PM", location: "Online", score1: "", score2: "", winner: "" },
     { id: 11, team1: "1st", team2: "2nd", status: "upcoming", date: "29 Aug", time: "10:30 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "QUALIFIER 1" },
     { id: 12, team1: "3rd", team2: "4th", status: "upcoming", date: "29 Aug", time: "11:00 PM", location: "Online", score1: "", score2: "", winner: "", isPlayoff: true, label: "ELIMINATOR" },
@@ -109,6 +109,9 @@ function normalizeMatch(match, fallback) {
     if (!match || typeof match !== "object") return fallback;
 
     const normalized = { ...fallback, ...match };
+    normalized.team1 = normalized.team1 === "Shivanagar" ? "Shivajinagar" : normalized.team1;
+    normalized.team2 = normalized.team2 === "Shivanagar" ? "Shivajinagar" : normalized.team2;
+    normalized.winner = normalized.winner === "Shivanagar" ? "Shivajinagar" : normalized.winner;
     normalized.date = fallback.date;
     normalized.time = fallback.time || "8:00 PM";
     normalized.location = fallback.location || "Online";
