@@ -76,6 +76,7 @@ const newsCancel = document.getElementById("news-cancel");
 const adminNewsList = document.getElementById("admin-news-list");
 const teamRepresentationList = document.getElementById("team-representation-list");
 const saveRepresentationsButton = document.getElementById("save-representations");
+const resetLeagueButton = document.getElementById("reset-league");
 const playerOnlySections = [
     document.getElementById("team-selector-section"),
     document.getElementById("team-dashboard-section"),
@@ -733,6 +734,14 @@ saveRepresentationsButton.addEventListener("click", function () {
         else delete teamRepresentations[select.dataset.representation];
     });
     saveJSON(REPRESENTATIONS_KEY, teamRepresentations);
+    renderAll();
+});
+
+resetLeagueButton.addEventListener("click", function () {
+    if (!window.confirm("Reset all match results and return the league to zero points?")) return;
+
+    matches = JSON.parse(JSON.stringify(defaultMatches));
+    localStorage.removeItem(STORAGE_KEY);
     renderAll();
 });
 
